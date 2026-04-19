@@ -1,0 +1,99 @@
+# CAM Feedback & Post Learning System
+
+Internes MVP zur strukturierten Erfassung von CAM-/NC-/Maschinen-Feedback, technischen Analysen, Change Requests, Tests, Regressionen und Wissensdatenbank — mit rollenbasierter API, Audit-Log und Docker-Start.
+
+## Voraussetzungen
+
+- Docker & Docker Compose **oder**
+- Python 3.11+, Node.js 20+, PostgreSQL 16+
+
+## Start mit Docker Compose
+
+```bash
+docker compose up --build
+```
+
+- **Frontend:** http://localhost:8080 (Nginx, `/api` → Backend)
+- **Backend API:** http://localhost:8000 — OpenAPI: http://localhost:8000/docs
+- **PostgreSQL:** Port 5432 (User/Pass/DB: `postgres` / `postgres` / `cam_feedback`)
+
+Nach dem Start werden Migrationen ausgeführt, **Seed-Daten** und der **Initial-Admin** angelegt (siehe unten).
+
+## Start lokal ohne Docker
+
+### Datenbank
+
+PostgreSQL anlegen, z. B. `cam_feedback`. `DATABASE_URL` in `backend/.env` setzen (siehe `backend/.env.example`).
+
+### Backend
+
+```bash
+cd backend
+python -m venv .venv
+.venv\Scripts\activate   # Windows
+pip install -r requirements.txt
+copy .env.example .env     # anpassen
+alembic upgrade head
+python -m scripts.seed
+uvicorn app.main:app --reload --host 0.0.0.0 --port 8000
+```
+
+### Frontend
+
+```bash
+cd frontend
+npm install
+npm run dev
+```
+
+Vite proxy leitet `/api` auf `http://localhost:8000` (siehe `frontend/vite.config.ts`).
+
+## Seed / Initial-Admin
+
+Standard (über `app.core.config.Settings`, per Umgebungsvariablen überschreibbar):
+
+| Variable | Standard |
+|----------|----------|
+| `INITIAL_ADMIN_EMAIL` | `admin@example.com` |
+| `INITIAL_ADMIN_PASSWORD` | `ChangeMe123!` |
+
+Der Seed legt Rollen, Severities, Priorities, Status, Fehlerkategorien, Demo-Maschine, Demo-Steuerung und eine produktive Demo-Post-Version an.
+
+## Migrationen
+
+```bash
+cd backend
+alembic upgrade head
+```
+
+Neue Revision (bei laufender/erreichbarer DB):
+
+```bash
+alembic revision --autogenerate -m "beschreibung"
+```
+
+## Wichtige Umgebungsvariablen (Backend)
+
+| Variable | Beschreibung |
+|----------|----------------|
+| `DATABASE_URL` | SQLAlchemy-URL (PostgreSQL) |
+| `SECRET_KEY` | JWT-Signing |
+| `ACCESS_TOKEN_EXPIRE_MINUTES` / `REFRESH_TOKEN_EXPIRE_DAYS` | Token-Laufzeiten |
+| `UPLOAD_DIR` | Verzeichnis für Anhänge |
+| `MAX_UPLOAD_MB` | max. Uploadgröße (Default 100) |
+| `CORS_ORIGINS` | Komma-separierte Origins |
+| `INITIAL_ADMIN_EMAIL` / `INITIAL_ADMIN_PASSWORD` | erster Admin |
+
+## Architektur (Kurz)
+
+- **Backend:** `backend/app` — `api/v1`, `core`, `db`, `models`, `schemas`, `services`
+- **Frontend:** `frontend/src` — `api`, `context`, `components`, `pages`
+- **Audit:** Feld `case_id` an `audit_logs` für schnelle Fall-Historie (Erweiterung für Nachvollziehbarkeit)
+
+## API-Überblick
+
+Basis: `/api/v1` — Auth (`/auth/login`, `/auth/refresh`, `/auth/me`), Benutzer, Rollen, Stammdaten, Fälle, Kommentare, Anhänge, Root Cause, Change Requests, Testfälle, Regressionen, Knowledge, Dashboards.
+
+## Lizenz / intern
+
+Internes Engineering-Tool — weiterentwickeln nach Bedarf.
