@@ -5,10 +5,11 @@ from sqlalchemy import select
 from sqlalchemy.orm import Session, joinedload
 
 from app.api.deps import get_db, require_roles
+from app.core import roles as R
 from app.core.roles import ADMIN
 from app.core.security import hash_password
 from app.models import User
-from app.schemas.user import UserCreate, UserOut, UserUpdate
+from app.schemas.user import UserBrief, UserCreate, UserOut, UserUpdate
 from app.services.audit_service import log_action
 
 router = APIRouter(prefix="/users", tags=["users"])
@@ -20,6 +21,23 @@ def list_users(
     _: Annotated[User, Depends(require_roles(ADMIN))],
 ) -> list[User]:
     rows = db.execute(select(User).options(joinedload(User.role)).where(User.deleted_at.is_(None))).scalars().all()
+    return list(rows)
+
+
+@router.get("/assignees", response_model=list[UserBrief])
+def list_assignees(
+    db: Annotated[Session, Depends(get_db)],
+    _: Annotated[User, Depends(require_roles(R.ADMIN, R.ENGINEERING))],
+) -> list[User]:
+    rows = (
+        db.execute(
+            select(User)
+            .where(User.deleted_at.is_(None), User.is_active.is_(True))
+            .order_by(User.last_name, User.first_name)
+        )
+        .scalars()
+        .all()
+    )
     return list(rows)
 
 

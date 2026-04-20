@@ -17,6 +17,10 @@ class Case(Base):
     machine_id: Mapped[int] = mapped_column(ForeignKey("machines.id"))
     control_system_id: Mapped[int | None] = mapped_column(ForeignKey("control_systems.id"), nullable=True)
     post_processor_version_id: Mapped[int] = mapped_column(ForeignKey("post_processor_versions.id"))
+    cam_step_model_id: Mapped[int] = mapped_column(ForeignKey("cam_step_models.id"))
+    generated_nc_attachment_id: Mapped[int | None] = mapped_column(
+        ForeignKey("case_attachments.id", ondelete="SET NULL"), nullable=True
+    )
     reporter_id: Mapped[int] = mapped_column(ForeignKey("users.id"))
     assignee_id: Mapped[int | None] = mapped_column(ForeignKey("users.id"), nullable=True)
 
@@ -40,6 +44,10 @@ class Case(Base):
     machine: Mapped["Machine"] = relationship(foreign_keys=[machine_id])
     control_system: Mapped["ControlSystem | None"] = relationship(foreign_keys=[control_system_id])
     post_processor_version: Mapped["PostProcessorVersion"] = relationship()
+    cam_step_model: Mapped["CamStepModel"] = relationship()
+    generated_nc_attachment: Mapped["CaseAttachment | None"] = relationship(
+        foreign_keys="Case.generated_nc_attachment_id",
+    )
     reporter: Mapped["User"] = relationship(foreign_keys=[reporter_id])
     assignee: Mapped["User | None"] = relationship(foreign_keys=[assignee_id])
     severity: Mapped["Severity"] = relationship()
@@ -47,7 +55,9 @@ class Case(Base):
     status: Mapped["Status"] = relationship()
 
     attachments: Mapped[list["CaseAttachment"]] = relationship(
-        back_populates="case", cascade="all, delete-orphan"
+        back_populates="case",
+        foreign_keys="CaseAttachment.case_id",
+        cascade="all, delete-orphan",
     )
     comments: Mapped[list["Comment"]] = relationship(
         back_populates="case", cascade="all, delete-orphan", order_by="Comment.created_at"

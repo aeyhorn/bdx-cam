@@ -22,6 +22,39 @@ def list_knowledge(
     return list(rows)
 
 
+@router.get("/{kid}", response_model=KnowledgeEntryOut)
+def get_knowledge(
+    kid: int,
+    db: Annotated[Session, Depends(get_db)],
+    user: Annotated[User, Depends(require_roles(R.ADMIN, R.ENGINEERING))],
+) -> KnowledgeEntry:
+    ke = db.get(KnowledgeEntry, kid)
+    if ke is None:
+        raise HTTPException(status.HTTP_404_NOT_FOUND, detail="Not found")
+    return ke
+
+
+@router.delete("/{kid}", status_code=status.HTTP_204_NO_CONTENT)
+def delete_knowledge(
+    kid: int,
+    db: Annotated[Session, Depends(get_db)],
+    user: Annotated[User, Depends(require_roles(R.ADMIN, R.ENGINEERING))],
+) -> None:
+    ke = db.get(KnowledgeEntry, kid)
+    if ke is None:
+        raise HTTPException(status.HTTP_404_NOT_FOUND, detail="Not found")
+    log_action(
+        db,
+        entity_type="KnowledgeEntry",
+        entity_id=kid,
+        action="deleted",
+        performed_by=user.id,
+        old_value={"title": ke.title},
+    )
+    db.delete(ke)
+    db.commit()
+
+
 @router.post("", response_model=KnowledgeEntryOut, status_code=status.HTTP_201_CREATED)
 def create_knowledge(
     body: KnowledgeEntryCreate,

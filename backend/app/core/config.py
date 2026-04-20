@@ -23,6 +23,10 @@ class Settings(BaseSettings):
 
     INITIAL_ADMIN_EMAIL: str = "admin@example.com"
     INITIAL_ADMIN_PASSWORD: str = "ChangeMe123!"
+    SYSTEM_BUILD_AUTOINCREMENT_ON_STARTUP: bool = False
+    SYSTEM_BUILD_FORCE_INCREMENT: bool = False
+    # format: "component:version;component:version"
+    SYSTEM_BUILD_STARTUP_SPECS: str = "backend-api:0.1.0"
 
     @property
     def max_upload_bytes(self) -> int:

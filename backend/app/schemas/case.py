@@ -2,10 +2,16 @@ from datetime import datetime
 
 from pydantic import BaseModel, Field
 
+from app.schemas.cam_step_model import CamStepModelOut
 from app.schemas.common import ORMModel
 from app.schemas.lookup import PriorityOut, SeverityOut, StatusOut
 from app.schemas.machine import ControlSystemOut, MachineOut
 from app.schemas.post_version import PostProcessorVersionOut
+
+
+class CaseAttachmentBrief(ORMModel):
+    id: int
+    file_name: str
 class CaseBriefUser(ORMModel):
     id: int
     first_name: str
@@ -21,6 +27,8 @@ class CaseOut(ORMModel):
     machine_id: int
     control_system_id: int | None
     post_processor_version_id: int
+    cam_step_model_id: int
+    generated_nc_attachment_id: int | None
     reporter_id: int
     assignee_id: int | None
     project_name: str | None
@@ -39,6 +47,8 @@ class CaseOut(ORMModel):
     machine: MachineOut | None = None
     control_system: ControlSystemOut | None = None
     post_processor_version: PostProcessorVersionOut | None = None
+    cam_step_model: CamStepModelOut | None = None
+    generated_nc_attachment: CaseAttachmentBrief | None = None
     reporter: CaseBriefUser | None = None
     assignee: CaseBriefUser | None = None
     severity: SeverityOut | None = None
@@ -51,6 +61,7 @@ class CaseCreate(BaseModel):
     description: str | None = None
     machine_id: int
     post_processor_version_id: int
+    cam_step_model_id: int
     nc_program_name: str = Field(min_length=1, max_length=512)
     severity_id: int
     control_system_id: int | None = None
@@ -80,6 +91,8 @@ class CasePatch(BaseModel):
     machine_id: int | None = None
     control_system_id: int | None = None
     post_processor_version_id: int | None = None
+    cam_step_model_id: int | None = None
+    generated_nc_attachment_id: int | None = None
     assignee_id: int | None = None
     project_name: str | None = None
     part_name: str | None = None
@@ -99,6 +112,8 @@ class CaseUpdateEngineering(BaseModel):
     machine_id: int | None = None
     control_system_id: int | None = None
     post_processor_version_id: int | None = None
+    cam_step_model_id: int | None = None
+    generated_nc_attachment_id: int | None = None
     assignee_id: int | None = None
     project_name: str | None = None
     part_name: str | None = None

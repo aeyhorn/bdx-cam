@@ -1,4 +1,5 @@
 from datetime import datetime
+from typing import Literal
 
 from pydantic import BaseModel, Field
 
@@ -55,5 +56,11 @@ class RegressionRunCreate(BaseModel):
     test_case_id: int
     post_processor_version_id: int
     result: str = Field(pattern="^(passed|failed|partial|open)$")
+    notes: str | None = None
+    executed_at: datetime | None = None
+
+
+class RegressionRunUpdate(BaseModel):
+    result: Literal["passed", "failed", "partial", "open"] | None = None
     notes: str | None = None
     executed_at: datetime | None = None

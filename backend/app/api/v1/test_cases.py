@@ -23,6 +23,32 @@ def list_test_cases(
     return list(rows)
 
 
+@router.get("/test-cases/{tc_id}", response_model=TestCaseOut)
+def get_tc(
+    tc_id: int,
+    db: Annotated[Session, Depends(get_db)],
+    user: Annotated[User, Depends(require_roles(R.ADMIN, R.ENGINEERING))],
+) -> TestCase:
+    tc = db.execute(select(TestCase).options(joinedload(TestCase.machine)).where(TestCase.id == tc_id)).scalar_one_or_none()
+    if tc is None:
+        raise HTTPException(status.HTTP_404_NOT_FOUND, detail="Not found")
+    return tc
+
+
+@router.delete("/test-cases/{tc_id}", status_code=status.HTTP_204_NO_CONTENT)
+def delete_tc(
+    tc_id: int,
+    db: Annotated[Session, Depends(get_db)],
+    user: Annotated[User, Depends(require_roles(R.ADMIN, R.ENGINEERING))],
+) -> None:
+    tc = db.get(TestCase, tc_id)
+    if tc is None:
+        raise HTTPException(status.HTTP_404_NOT_FOUND, detail="Not found")
+    log_action(db, entity_type="TestCase", entity_id=tc_id, action="deleted", performed_by=user.id, old_value={"title": tc.title})
+    db.delete(tc)
+    db.commit()
+
+
 @router.post("/test-cases", response_model=TestCaseOut, status_code=status.HTTP_201_CREATED)
 def create_tc(
     body: TestCaseCreate,

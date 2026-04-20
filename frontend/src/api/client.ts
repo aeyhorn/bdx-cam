@@ -1,6 +1,29 @@
 import axios from 'axios'
 
-const baseURL = import.meta.env.VITE_API_URL?.trim() || ''
+/**
+ * API base URL from Vite env. If unset, axios uses relative `/api/v1/...` URLs against the
+ * current page origin (correct for Docker: UI on :8080 proxies `/api` to the backend).
+ *
+ * If the bundle was built with `VITE_API_URL=http://localhost:8000` but the app is opened
+ * via another host (e.g. http://192.168.x.x:8080), requests would wrongly hit the client
+ * machine's localhost and often return 404 "Not Found". In that case we fall back to
+ * same-origin (empty base URL).
+ */
+function resolveApiBaseURL(): string {
+  const raw = import.meta.env.VITE_API_URL?.trim() || ''
+  if (typeof window === 'undefined') return raw
+  const pageHost = window.location.hostname
+  const pageIsLocal = pageHost === 'localhost' || pageHost === '127.0.0.1'
+  const targetsLocalApi =
+    raw === 'http://localhost:8000' ||
+    raw === 'http://127.0.0.1:8000' ||
+    raw.startsWith('http://localhost:8000/') ||
+    raw.startsWith('http://127.0.0.1:8000/')
+  if (!pageIsLocal && targetsLocalApi) return ''
+  return raw
+}
+
+const baseURL = resolveApiBaseURL()
 
 export const api = axios.create({
   baseURL: baseURL || undefined,

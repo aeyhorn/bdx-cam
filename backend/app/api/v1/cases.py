@@ -26,6 +26,11 @@ from app.schemas.test_case import TestCaseOut
 from app.services.audit_service import log_action
 from app.services.case_access import ensure_case_readable, ensure_case_writable_production
 from app.services.ticket_service import next_ticket_no
+from app.services.toolchain_service import (
+    require_approved_toolchain,
+    require_cam_step_model,
+    validate_generated_nc_attachment,
+)
 
 router = APIRouter(prefix="/cases", tags=["cases"])
 
@@ -33,6 +38,8 @@ _CASE_LOAD = (
     selectinload(Case.machine).selectinload(Machine.control_system),
     selectinload(Case.control_system),
     selectinload(Case.post_processor_version),
+    selectinload(Case.cam_step_model),
+    selectinload(Case.generated_nc_attachment),
     selectinload(Case.reporter),
     selectinload(Case.assignee),
     selectinload(Case.severity),
@@ -93,6 +100,13 @@ def create_case(
     pr = db.execute(select(Priority).where(Priority.key == "NORMAL")).scalar_one_or_none()
     if st is None or pr is None:
         raise HTTPException(status.HTTP_500_INTERNAL_SERVER_ERROR, detail="Missing seed statuses/priorities")
+    require_cam_step_model(db, body.cam_step_model_id)
+    require_approved_toolchain(
+        db,
+        machine_id=body.machine_id,
+        post_processor_version_id=body.post_processor_version_id,
+        control_system_id=body.control_system_id,
+    )
     ticket = next_ticket_no(db)
     c = Case(
         ticket_no=ticket,
@@ -101,6 +115,8 @@ def create_case(
         machine_id=body.machine_id,
         control_system_id=body.control_system_id,
         post_processor_version_id=body.post_processor_version_id,
+        cam_step_model_id=body.cam_step_model_id,
+        generated_nc_attachment_id=None,
         reporter_id=user.id,
         assignee_id=None,
         project_name=body.project_name,
@@ -176,6 +192,17 @@ def patch_case(
     }
     for k, v in data.items():
         setattr(c, k, v)
+    if {"machine_id", "post_processor_version_id", "control_system_id"} & data.keys():
+        require_approved_toolchain(
+            db,
+            machine_id=c.machine_id,
+            post_processor_version_id=c.post_processor_version_id,
+            control_system_id=c.control_system_id,
+        )
+    if "cam_step_model_id" in data:
+        require_cam_step_model(db, c.cam_step_model_id)
+    if "generated_nc_attachment_id" in data:
+        validate_generated_nc_attachment(db, c.id, c.generated_nc_attachment_id)
     db.flush()
     if "status_id" in data and data["status_id"] != old_snapshot["status_id"]:
         log_action(

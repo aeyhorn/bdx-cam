@@ -23,7 +23,8 @@ type NavItem = { to: string; label: string; roles: RoleKey[] }
 
 const navItems: NavItem[] = [
   { to: '/dashboard', label: 'Dashboard', roles: ['ADMIN', 'ENGINEERING', 'FEEDBACK_PRODUCTION'] },
-  { to: '/feedback/new', label: 'Neues Feedback', roles: ['FEEDBACK_PRODUCTION'] },
+  { to: '/workflow', label: 'Validierungskreislauf', roles: ['ADMIN', 'ENGINEERING', 'FEEDBACK_PRODUCTION'] },
+  { to: '/feedback/new', label: 'Problem melden', roles: ['FEEDBACK_PRODUCTION'] },
   { to: '/cases/mine', label: 'Meine Fälle', roles: ['FEEDBACK_PRODUCTION'] },
   { to: '/cases', label: 'Alle Fälle', roles: ['ADMIN', 'ENGINEERING'] },
   { to: '/change-requests', label: 'Change Requests', roles: ['ADMIN', 'ENGINEERING'] },
@@ -34,6 +35,9 @@ const navItems: NavItem[] = [
   { to: '/admin/machines', label: 'Maschinen', roles: ['ADMIN'] },
   { to: '/admin/control-systems', label: 'Steuerungen', roles: ['ADMIN'] },
   { to: '/admin/post-versions', label: 'Post-Versionen', roles: ['ADMIN'] },
+  { to: '/admin/system-builds', label: 'System-Builds', roles: ['ADMIN'] },
+  { to: '/admin/cam-step-models', label: 'Step- / CAM-Modelle', roles: ['ADMIN'] },
+  { to: '/admin/machine-post-bindings', label: 'Fertigungsbindungen', roles: ['ADMIN'] },
   { to: '/admin/categories', label: 'Kategorien', roles: ['ADMIN'] },
   { to: '/admin/statuses', label: 'Status', roles: ['ADMIN'] },
   { to: '/admin/severities', label: 'Severity', roles: ['ADMIN'] },

@@ -11,7 +11,19 @@ from sqlalchemy.orm import Session
 from app.core.config import get_settings
 from app.core.security import hash_password
 from app.db.session import SessionLocal
-from app.models import ControlSystem, ErrorCategory, Machine, PostProcessorVersion, Priority, Role, Severity, Status, User
+from app.models import (
+    ControlSystem,
+    ErrorCategory,
+    Machine,
+    MachinePostBinding,
+    PostProcessorVersion,
+    Priority,
+    Role,
+    Severity,
+    Status,
+    SystemBuildVersion,
+    User,
+)
 
 
 def seed(session: Session) -> None:
@@ -125,6 +137,50 @@ def seed(session: Session) -> None:
                 is_active=True,
             )
         )
+
+    session.flush()
+    demo_pp = session.execute(select(PostProcessorVersion).where(PostProcessorVersion.name == "Demo Post")).scalar_one_or_none()
+    demo_m = session.execute(select(Machine).where(Machine.name == "Demo Machine")).scalar_one_or_none()
+    if demo_pp is not None and demo_m is not None:
+        dup = session.execute(
+            select(MachinePostBinding.id).where(
+                MachinePostBinding.machine_id == demo_m.id,
+                MachinePostBinding.post_processor_version_id == demo_pp.id,
+                MachinePostBinding.control_system_id == cs_demo.id,
+            )
+        ).scalar_one_or_none()
+        if dup is None:
+            session.add(
+                MachinePostBinding(
+                    machine_id=demo_m.id,
+                    post_processor_version_id=demo_pp.id,
+                    control_system_id=cs_demo.id,
+                    notes="Seed: Demo-Fertigungsbindung",
+                )
+            )
+
+    build_seeds = [
+        ("backend-api", "1.0.0", "Initial API baseline", True),
+        ("frontend-web", "1.0.0", "Initial UI baseline", True),
+        ("post-library", "1.0.0", "Initial productive post package", True),
+    ]
+    for comp, ver, note, deployed in build_seeds:
+        exists = session.execute(
+            select(SystemBuildVersion.id).where(
+                SystemBuildVersion.component == comp,
+                SystemBuildVersion.version_label == ver,
+            ).limit(1)
+        ).scalar_one_or_none()
+        if exists is None:
+            session.add(
+                SystemBuildVersion(
+                    component=comp,
+                    version_label=ver,
+                    build_no=1,
+                    changelog=note,
+                    is_deployed=deployed,
+                )
+            )
 
     session.commit()
 

@@ -61,6 +61,55 @@ def get_cr(
     return cr
 
 
+@router.delete("/{cr_id}/link-case/{case_id}", status_code=status.HTTP_204_NO_CONTENT)
+def unlink_case(
+    cr_id: int,
+    case_id: int,
+    db: Annotated[Session, Depends(get_db)],
+    user: Annotated[User, Depends(require_roles(R.ADMIN, R.ENGINEERING))],
+) -> None:
+    row = db.execute(
+        select(ChangeRequestCase).where(
+            ChangeRequestCase.change_request_id == cr_id, ChangeRequestCase.case_id == case_id
+        )
+    ).scalar_one_or_none()
+    if row is None:
+        return None
+    db.delete(row)
+    log_action(
+        db,
+        entity_type="ChangeRequestCase",
+        entity_id=cr_id,
+        action="unlinked_case",
+        performed_by=user.id,
+        old_value={"case_id": case_id},
+        case_id=case_id,
+    )
+    db.commit()
+    return None
+
+
+@router.delete("/{cr_id}", status_code=status.HTTP_204_NO_CONTENT)
+def delete_cr(
+    cr_id: int,
+    db: Annotated[Session, Depends(get_db)],
+    user: Annotated[User, Depends(require_roles(R.ADMIN, R.ENGINEERING))],
+) -> None:
+    cr = db.get(ChangeRequest, cr_id)
+    if cr is None:
+        raise HTTPException(status.HTTP_404_NOT_FOUND, detail="Not found")
+    log_action(
+        db,
+        entity_type="ChangeRequest",
+        entity_id=cr_id,
+        action="deleted",
+        performed_by=user.id,
+        old_value={"change_no": cr.change_no, "title": cr.title},
+    )
+    db.delete(cr)
+    db.commit()
+
+
 @router.patch("/{cr_id}", response_model=ChangeRequestOut)
 def patch_cr(
     cr_id: int,

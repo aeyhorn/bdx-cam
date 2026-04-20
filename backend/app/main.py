@@ -6,6 +6,8 @@ from fastapi.middleware.cors import CORSMiddleware
 
 from app.api.v1.router import api_router
 from app.core.config import get_settings
+from app.db.session import SessionLocal
+from app.services.system_build_service import parse_build_specs, register_startup_builds
 
 settings = get_settings()
 
@@ -32,3 +34,15 @@ def health() -> dict[str, str]:
 @app.on_event("startup")
 def startup() -> None:
     os.makedirs(settings.UPLOAD_DIR, exist_ok=True)
+    if not settings.SYSTEM_BUILD_AUTOINCREMENT_ON_STARTUP:
+        return
+    db = SessionLocal()
+    try:
+        specs = parse_build_specs(settings.SYSTEM_BUILD_STARTUP_SPECS)
+        if specs:
+            register_startup_builds(db, specs, force_increment=settings.SYSTEM_BUILD_FORCE_INCREMENT)
+            db.commit()
+    except Exception:
+        db.rollback()
+    finally:
+        db.close()

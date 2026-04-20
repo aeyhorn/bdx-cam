@@ -17,6 +17,8 @@ docker compose up --build
 - **Backend API:** http://localhost:8000 — OpenAPI: http://localhost:8000/docs
 - **PostgreSQL:** Port 5432 (User/Pass/DB: `postgres` / `postgres` / `cam_feedback`)
 
+**Zugriff über andere Rechner / LAN-IP:** Die Oberfläche unter `http://<deine-ip>:8080` öffnen (nicht nur „localhost“). API-Aufrufe laufen dann über denselben Host (Nginx-Proxy `/api`). Wenn du beim Frontend-Build `VITE_API_URL=http://localhost:8000` gesetzt hast, würde der Browser von anderen PCs fälschlich `localhost` auf dem **eigenen** Rechner ansprechen — Anmeldung schlägt fehl (häufig **404 Not Found**). Entweder `VITE_API_URL` weglassen/leer lassen oder die echte URL zum Backend setzen und `CORS_ORIGINS` in Compose um `http://<deine-ip>:8080` ergänzen.
+
 Nach dem Start werden Migrationen ausgeführt, **Seed-Daten** und der **Initial-Admin** angelegt (siehe unten).
 
 ## Start lokal ohne Docker

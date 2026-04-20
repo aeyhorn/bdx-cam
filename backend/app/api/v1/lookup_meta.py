@@ -1,12 +1,12 @@
 from typing import Annotated
 
 from fastapi import APIRouter, Depends, HTTPException, status
-from sqlalchemy import select
+from sqlalchemy import func, select
 from sqlalchemy.orm import Session
 
 from app.api.deps import get_current_user, get_db, require_roles
 from app.core.roles import ADMIN
-from app.models import Priority, Severity, Status, User
+from app.models import Case, Priority, Severity, Status, User
 from app.schemas.lookup import PriorityOut, SeverityOut, StatusCreate, StatusOut, StatusUpdate
 from app.services.audit_service import log_action
 
@@ -72,3 +72,20 @@ def update_status(
     db.commit()
     db.refresh(s)
     return s
+
+
+@router.delete("/statuses/{status_id}", status_code=status.HTTP_204_NO_CONTENT)
+def delete_status(
+    status_id: int,
+    db: Annotated[Session, Depends(get_db)],
+    actor: Annotated[User, Depends(require_roles(ADMIN))],
+) -> None:
+    s = db.get(Status, status_id)
+    if s is None:
+        raise HTTPException(status.HTTP_404_NOT_FOUND, detail="Not found")
+    n = db.execute(select(func.count()).select_from(Case).where(Case.status_id == status_id)).scalar_one()
+    if (n or 0) > 0:
+        raise HTTPException(status.HTTP_409_CONFLICT, detail="Status in use by cases")
+    log_action(db, entity_type="Status", entity_id=status_id, action="deleted", performed_by=actor.id, old_value={"key": s.key})
+    db.delete(s)
+    db.commit()

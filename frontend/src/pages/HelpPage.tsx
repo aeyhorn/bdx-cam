@@ -6,9 +6,14 @@ export function HelpPage() {
       <Typography variant="h6" gutterBottom>
         Hilfe
       </Typography>
+      <Typography variant="body2" sx={{ mb: 2 }}>
+        Unter <strong>Problem melden</strong> wählen Sie zuerst Ihre Maschine samt Programmumgebung (ein Eintrag), tragen den
+        <strong> NC-Programmnamen</strong> ein und beschreiben in wenigen Sätzen das Problem. Titel und technische Zusatzfelder sind
+        optional.
+      </Typography>
       <Typography variant="body2">
-        Erfassen Sie Feedback direkt aus der Fertigung: Maschine, Post-Version und NC-Programm sind Pflichtfelder. Engineering
-        analysiert den Fall und kann Rückfragen stellen.
+        Die Kombination <strong>Maschine · Steuerung · Postprozessor</strong> muss vom Administrator unter „Fertigungsbindungen“
+        freigegeben sein. Optional kann Engineering später den konkreten generierten NC-Anhang am Fall verknüpfen.
       </Typography>
     </Paper>
   )

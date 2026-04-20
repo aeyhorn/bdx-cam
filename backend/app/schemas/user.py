@@ -11,6 +11,15 @@ class RoleBrief(ORMModel):
     name: str
 
 
+class UserBrief(ORMModel):
+    """Minimal user info for pickers (assignee, etc.)."""
+
+    id: int
+    first_name: str
+    last_name: str
+    email: str
+
+
 class UserOut(ORMModel):
     id: int
     first_name: str

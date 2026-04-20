@@ -9,7 +9,21 @@ import { CaseDetailPage } from './pages/CaseDetailPage'
 import { NewFeedbackPage } from './pages/NewFeedbackPage'
 import { NotFoundPage } from './pages/NotFoundPage'
 import { HelpPage } from './pages/HelpPage'
-import { SimpleListPage } from './pages/SimpleListPage'
+import { WorkflowPage } from './pages/WorkflowPage'
+import { UsersAdminPage } from './pages/admin/UsersAdminPage'
+import { MachinesAdminPage } from './pages/admin/MachinesAdminPage'
+import { ControlSystemsAdminPage } from './pages/admin/ControlSystemsAdminPage'
+import { PostVersionsAdminPage } from './pages/admin/PostVersionsAdminPage'
+import { CamStepModelsAdminPage } from './pages/admin/CamStepModelsAdminPage'
+import { MachinePostBindingsAdminPage } from './pages/admin/MachinePostBindingsAdminPage'
+import { CategoriesAdminPage } from './pages/admin/CategoriesAdminPage'
+import { StatusesAdminPage } from './pages/admin/StatusesAdminPage'
+import { SystemBuildsAdminPage } from './pages/admin/SystemBuildsAdminPage'
+import { PrioritiesListPage, SeveritiesListPage } from './pages/admin/LookupReadonlyPage'
+import { ChangeRequestsPage } from './pages/engineering/ChangeRequestsPage'
+import { TestCasesPage } from './pages/engineering/TestCasesPage'
+import { KnowledgePage } from './pages/engineering/KnowledgePage'
+import { RegressionRunsPage } from './pages/engineering/RegressionRunsPage'
 import { Box, CircularProgress } from '@mui/material'
 
 function Protected({ children }: { children: React.ReactNode }) {
@@ -25,6 +39,8 @@ function Protected({ children }: { children: React.ReactNode }) {
   return <AppShell>{children}</AppShell>
 }
 
+const allRoles = ['ADMIN', 'ENGINEERING', 'FEEDBACK_PRODUCTION'] as const
+
 export default function App() {
   return (
     <Routes>
@@ -34,6 +50,16 @@ export default function App() {
         element={
           <Protected>
             <DashboardPage />
+          </Protected>
+        }
+      />
+      <Route
+        path="/workflow"
+        element={
+          <Protected>
+            <RoleGuard allow={[...allRoles]}>
+              <WorkflowPage />
+            </RoleGuard>
           </Protected>
         }
       />
@@ -80,7 +106,7 @@ export default function App() {
         element={
           <Protected>
             <RoleGuard allow={['ADMIN', 'ENGINEERING']}>
-              <SimpleListPage title="Change Requests" url="/api/v1/change-requests" />
+              <ChangeRequestsPage />
             </RoleGuard>
           </Protected>
         }
@@ -90,7 +116,7 @@ export default function App() {
         element={
           <Protected>
             <RoleGuard allow={['ADMIN', 'ENGINEERING']}>
-              <SimpleListPage title="Testfälle" url="/api/v1/test-cases" />
+              <TestCasesPage />
             </RoleGuard>
           </Protected>
         }
@@ -100,7 +126,7 @@ export default function App() {
         element={
           <Protected>
             <RoleGuard allow={['ADMIN', 'ENGINEERING']}>
-              <SimpleListPage title="Regression Runs" url="/api/v1/regression-runs" />
+              <RegressionRunsPage />
             </RoleGuard>
           </Protected>
         }
@@ -110,7 +136,7 @@ export default function App() {
         element={
           <Protected>
             <RoleGuard allow={['ADMIN', 'ENGINEERING']}>
-              <SimpleListPage title="Wissensdatenbank" url="/api/v1/knowledge" />
+              <KnowledgePage />
             </RoleGuard>
           </Protected>
         }
@@ -120,7 +146,7 @@ export default function App() {
         element={
           <Protected>
             <RoleGuard allow={['ADMIN']}>
-              <SimpleListPage title="Benutzer" url="/api/v1/users" />
+              <UsersAdminPage />
             </RoleGuard>
           </Protected>
         }
@@ -130,7 +156,7 @@ export default function App() {
         element={
           <Protected>
             <RoleGuard allow={['ADMIN']}>
-              <SimpleListPage title="Maschinen" url="/api/v1/machines" />
+              <MachinesAdminPage />
             </RoleGuard>
           </Protected>
         }
@@ -140,7 +166,7 @@ export default function App() {
         element={
           <Protected>
             <RoleGuard allow={['ADMIN']}>
-              <SimpleListPage title="Steuerungen" url="/api/v1/control-systems" />
+              <ControlSystemsAdminPage />
             </RoleGuard>
           </Protected>
         }
@@ -150,7 +176,37 @@ export default function App() {
         element={
           <Protected>
             <RoleGuard allow={['ADMIN']}>
-              <SimpleListPage title="Post-Versionen" url="/api/v1/post-versions" />
+              <PostVersionsAdminPage />
+            </RoleGuard>
+          </Protected>
+        }
+      />
+      <Route
+        path="/admin/cam-step-models"
+        element={
+          <Protected>
+            <RoleGuard allow={['ADMIN']}>
+              <CamStepModelsAdminPage />
+            </RoleGuard>
+          </Protected>
+        }
+      />
+      <Route
+        path="/admin/machine-post-bindings"
+        element={
+          <Protected>
+            <RoleGuard allow={['ADMIN']}>
+              <MachinePostBindingsAdminPage />
+            </RoleGuard>
+          </Protected>
+        }
+      />
+      <Route
+        path="/admin/system-builds"
+        element={
+          <Protected>
+            <RoleGuard allow={['ADMIN']}>
+              <SystemBuildsAdminPage />
             </RoleGuard>
           </Protected>
         }
@@ -160,7 +216,7 @@ export default function App() {
         element={
           <Protected>
             <RoleGuard allow={['ADMIN']}>
-              <SimpleListPage title="Fehlerkategorien" url="/api/v1/categories" />
+              <CategoriesAdminPage />
             </RoleGuard>
           </Protected>
         }
@@ -170,7 +226,7 @@ export default function App() {
         element={
           <Protected>
             <RoleGuard allow={['ADMIN']}>
-              <SimpleListPage title="Status" url="/api/v1/statuses" />
+              <StatusesAdminPage />
             </RoleGuard>
           </Protected>
         }
@@ -180,7 +236,7 @@ export default function App() {
         element={
           <Protected>
             <RoleGuard allow={['ADMIN']}>
-              <SimpleListPage title="Severity" url="/api/v1/severities" />
+              <SeveritiesListPage />
             </RoleGuard>
           </Protected>
         }
@@ -190,7 +246,7 @@ export default function App() {
         element={
           <Protected>
             <RoleGuard allow={['ADMIN']}>
-              <SimpleListPage title="Priorität" url="/api/v1/priorities" />
+              <PrioritiesListPage />
             </RoleGuard>
           </Protected>
         }

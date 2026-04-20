@@ -15,9 +15,10 @@ from app.models import (
     RootCause,
     Severity,
     Status,
+    SystemBuildVersion,
     User,
 )
-from app.schemas.dashboard import AdminDashboard, EngineeringDashboard, LabelCount, ProductionDashboard
+from app.schemas.dashboard import AdminDashboard, EngineeringDashboard, LabelCount, ProductionDashboard, SystemBuildStatus
 
 router = APIRouter(prefix="/dashboard", tags=["dashboard"])
 
@@ -29,6 +30,36 @@ def _case_brief(c: Case) -> dict[str, Any]:
         "title": c.title,
         "created_at": c.created_at.isoformat() if c.created_at else None,
     }
+
+
+def _build_statuses(db: Session) -> list[SystemBuildStatus]:
+    rows = db.execute(
+        select(SystemBuildVersion).order_by(
+            SystemBuildVersion.component.asc(),
+            SystemBuildVersion.build_no.desc(),
+            SystemBuildVersion.id.desc(),
+        )
+    ).scalars().all()
+    grouped: dict[str, list[SystemBuildVersion]] = {}
+    for row in rows:
+        grouped.setdefault(row.component, []).append(row)
+    out: list[SystemBuildStatus] = []
+    for component, items in grouped.items():
+        latest = items[0]
+        deployed = next((x for x in items if x.is_deployed), None)
+        out.append(
+            SystemBuildStatus(
+                component=component,
+                latest_build_no=latest.build_no,
+                latest_version_label=latest.version_label,
+                latest_created_at=latest.created_at,
+                deployed_build_no=deployed.build_no if deployed else None,
+                deployed_version_label=deployed.version_label if deployed else None,
+                deployed_created_at=deployed.created_at if deployed else None,
+                is_outdated=(deployed is None) or (deployed.id != latest.id),
+            )
+        )
+    return out
 
 
 @router.get("/production", response_model=ProductionDashboard)
@@ -69,6 +100,7 @@ def dash_production(
         my_open_cases=int(my_open),
         open_questions=int(open_q),
         recent_cases=[_case_brief(x) for x in recent],
+        system_builds=_build_statuses(db),
     )
 
 
@@ -115,6 +147,7 @@ def dash_engineering(
         cases_without_root_cause=cases_without_root_cause,
         cases_in_test=int(cases_in_test),
         open_regressions=int(open_reg),
+        system_builds=_build_statuses(db),
     )
 
 
@@ -171,4 +204,5 @@ def dash_admin(
         productive_post_versions=productive,
         cases_per_machine=per_machine,
         cases_per_status=per_status,
+        system_builds=_build_statuses(db),
     )

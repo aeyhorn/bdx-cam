@@ -74,13 +74,17 @@ export function CasesPage() {
         value={search}
         onChange={(e) => setSearch(e.target.value)}
       />
-      <Box sx={{ height: 560, width: '100%', bgcolor: 'background.paper' }}>
+      <Box sx={{ height: '70vh', minHeight: 460, width: '100%', bgcolor: 'background.paper' }}>
         <DataGrid
           rows={data ?? []}
           columns={columns}
           loading={isLoading}
           onRowClick={(p) => navigate(`/cases/${p.id}`)}
+          density="compact"
+          rowHeight={34}
+          columnHeaderHeight={36}
           disableRowSelectionOnClick
+          sx={{ fontSize: 12 }}
         />
       </Box>
       {error && <Box color="error.main">Fehler beim Laden.</Box>}

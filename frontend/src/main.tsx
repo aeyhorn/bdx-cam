@@ -18,6 +18,18 @@ const theme = createTheme({
   },
   typography: {
     fontFamily: ['Roboto', 'Helvetica Neue', 'Arial', 'sans-serif'].join(','),
+    fontSize: 13,
+  },
+  components: {
+    MuiTableCell: {
+      styleOverrides: {
+        root: {
+          fontSize: 12,
+          paddingTop: 6,
+          paddingBottom: 6,
+        },
+      },
+    },
   },
 })
 

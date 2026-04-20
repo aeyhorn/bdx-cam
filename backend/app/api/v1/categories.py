@@ -1,12 +1,12 @@
 from typing import Annotated
 
 from fastapi import APIRouter, Depends, HTTPException, status
-from sqlalchemy import select
+from sqlalchemy import func, select
 from sqlalchemy.orm import Session
 
 from app.api.deps import get_current_user, get_db, require_roles
 from app.core.roles import ADMIN
-from app.models import ErrorCategory, User
+from app.models import ErrorCategory, KnowledgeEntry, RootCause, User
 from app.schemas.lookup import ErrorCategoryCreate, ErrorCategoryOut, ErrorCategoryUpdate
 from app.services.audit_service import log_action
 
@@ -54,3 +54,21 @@ def update_category(
     db.commit()
     db.refresh(c)
     return c
+
+
+@router.delete("/{cat_id}", status_code=status.HTTP_204_NO_CONTENT)
+def delete_category(
+    cat_id: int,
+    db: Annotated[Session, Depends(get_db)],
+    actor: Annotated[User, Depends(require_roles(ADMIN))],
+) -> None:
+    c = db.get(ErrorCategory, cat_id)
+    if c is None:
+        raise HTTPException(status.HTTP_404_NOT_FOUND, detail="Not found")
+    n_rc = db.execute(select(func.count()).select_from(RootCause).where(RootCause.error_category_id == cat_id)).scalar_one()
+    n_ke = db.execute(select(func.count()).select_from(KnowledgeEntry).where(KnowledgeEntry.error_category_id == cat_id)).scalar_one()
+    if (n_rc or 0) > 0 or (n_ke or 0) > 0:
+        raise HTTPException(status.HTTP_409_CONFLICT, detail="Category in use; reassign or remove references first")
+    log_action(db, entity_type="ErrorCategory", entity_id=cat_id, action="deleted", performed_by=actor.id, old_value={"name": c.name})
+    db.delete(c)
+    db.commit()
