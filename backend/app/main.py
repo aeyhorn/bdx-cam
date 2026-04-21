@@ -31,6 +31,11 @@ def health() -> dict[str, str]:
     return {"status": "ok"}
 
 
+@app.get("/health/version")
+def health_version() -> dict[str, str]:
+    return {"status": "ok", "release_id": settings.RELEASE_ID}
+
+
 @app.on_event("startup")
 def startup() -> None:
     os.makedirs(settings.UPLOAD_DIR, exist_ok=True)

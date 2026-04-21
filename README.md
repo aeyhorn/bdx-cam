@@ -80,6 +80,7 @@ alembic revision --autogenerate -m "beschreibung"
 |----------|----------------|
 | `DATABASE_URL` | SQLAlchemy-URL (PostgreSQL) |
 | `SECRET_KEY` | JWT-Signing |
+| `RELEASE_ID` | Gemeinsame Release-ID für Frontend/Backend-Match (z. B. Git-SHA) |
 | `ACCESS_TOKEN_EXPIRE_MINUTES` / `REFRESH_TOKEN_EXPIRE_DAYS` | Token-Laufzeiten |
 | `UPLOAD_DIR` | Verzeichnis für Anhänge |
 | `MAX_UPLOAD_MB` | max. Uploadgröße (Default 100) |
@@ -97,6 +98,23 @@ alembic revision --autogenerate -m "beschreibung"
 ## API-Überblick
 
 Basis: `/api/v1` — Auth (`/auth/login`, `/auth/refresh`, `/auth/me`), Benutzer, Rollen, Stammdaten, Fälle, Kommentare, Anhänge, Root Cause, Change Requests, Testfälle, Regressionen, Knowledge, Dashboards.
+
+Zusätzlich: `GET /health/version` liefert den aktuellen Backend-Release-Stand (`release_id`), damit das Frontend Versionsabweichungen anzeigen kann.
+
+Hinweis 3D-Viewer: Wenn beim Öffnen einer STEP-Datei eine Fehlermeldung erscheint, fehlt meist `STEP_CONVERTER_COMMAND` im Backend-Deployment oder der Konverter ist im Container/Server nicht installiert. Das Frontend zeigt die konkrete Backend-Fehlermeldung an.
+
+## Deploy ohne manuelle RELEASE_ID
+
+Für konsistente Frontend/Backend-Stände bei jedem Build sind Deploy-Skripte enthalten, die `RELEASE_ID` automatisch aus Git setzen (Tag bevorzugt, sonst Commit-SHA):
+
+- Linux/macOS: `./scripts/deploy.sh` (optional Branch: `./scripts/deploy.sh main`)
+- Windows PowerShell: `./scripts/deploy.ps1` (optional Branch: `.\scripts\deploy.ps1 -Branch main`)
+
+### Verbindliche Deploy-Checkliste
+
+- Nur über `scripts/deploy.sh` bzw. `scripts/deploy.ps1` deployen.
+- Keine manuellen `docker compose up -d --build` Aufrufe ohne gesetzte `RELEASE_ID`.
+- Nach Deploy kurz prüfen: UI-Warnung zur Versionsabweichung darf nicht erscheinen.
 
 ## Lizenz / intern
 

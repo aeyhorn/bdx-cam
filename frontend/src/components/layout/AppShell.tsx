@@ -2,6 +2,7 @@ import {
   Box,
   Divider,
   Drawer,
+  Alert,
   List,
   ListItemButton,
   ListItemText,
@@ -45,7 +46,13 @@ const navItems: NavItem[] = [
   { to: '/help', label: 'Hilfe', roles: ['FEEDBACK_PRODUCTION'] },
 ]
 
-export function AppShell({ children }: { children: React.ReactNode }) {
+export function AppShell({
+  children,
+  versionWarning,
+}: {
+  children: React.ReactNode
+  versionWarning?: string | null
+}) {
   const { user, logout } = useAuth()
   const loc = useLocation()
   const navigate = useNavigate()
@@ -132,6 +139,11 @@ export function AppShell({ children }: { children: React.ReactNode }) {
           mt: 8,
         }}
       >
+        {versionWarning && (
+          <Alert severity="warning" sx={{ mb: 2 }}>
+            {versionWarning}
+          </Alert>
+        )}
         {children}
       </Box>
     </Box>

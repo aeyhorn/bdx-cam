@@ -24,6 +24,33 @@ export function Step3DViewer({ attachment }: Props) {
 
   useEffect(() => {
     let currentUrl: string | null = null
+    async function extractErrorMessage(e: unknown): Promise<string> {
+      const err = e as {
+        response?: { status?: number; data?: Blob | { detail?: string } | string }
+        message?: string
+      }
+      const data = err.response?.data
+      if (typeof data === 'string' && data.trim()) return data
+      if (data && typeof data === 'object' && 'detail' in data && typeof data.detail === 'string') return data.detail
+      if (data instanceof Blob) {
+        try {
+          const raw = await data.text()
+          if (raw) {
+            try {
+              const parsed = JSON.parse(raw) as { detail?: string }
+              if (parsed.detail) return parsed.detail
+            } catch {
+              if (raw.trim()) return raw.trim()
+            }
+          }
+        } catch {
+          // ignore parsing errors and fall back below
+        }
+      }
+      if (err.response?.status) return `3D-Modell konnte nicht geladen werden (HTTP ${err.response.status}).`
+      return err.message || '3D-Modell konnte nicht geladen werden.'
+    }
+
     async function load() {
       if (!endpoint) {
         setModelUrl(null)
@@ -37,8 +64,8 @@ export function Step3DViewer({ attachment }: Props) {
         currentUrl = URL.createObjectURL(res.data)
         setModelUrl(currentUrl)
       } catch (e: unknown) {
-        const detail = (e as { response?: { data?: { detail?: string } } }).response?.data?.detail
-        setError(detail ?? '3D-Modell konnte nicht geladen werden.')
+        const detail = await extractErrorMessage(e)
+        setError(detail)
         setModelUrl(null)
       } finally {
         setLoading(false)

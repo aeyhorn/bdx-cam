@@ -9,6 +9,7 @@ class Settings(BaseSettings):
 
     PROJECT_NAME: str = "BDXPostOffice API"
     API_V1_PREFIX: str = "/api/v1"
+    RELEASE_ID: str = "dev-local"
 
     DATABASE_URL: str = "postgresql+psycopg2://postgres:postgres@localhost:5432/cam_feedback"
     SECRET_KEY: str = "change-me-in-production-use-long-random-string"

@@ -25,9 +25,50 @@ import { TestCasesPage } from './pages/engineering/TestCasesPage'
 import { KnowledgePage } from './pages/engineering/KnowledgePage'
 import { RegressionRunsPage } from './pages/engineering/RegressionRunsPage'
 import { Box, CircularProgress } from '@mui/material'
+import { useEffect, useMemo, useState } from 'react'
+
+type RuntimeVersionResponse = {
+  status: string
+  release_id?: string
+}
 
 function Protected({ children }: { children: React.ReactNode }) {
   const { user, loading } = useAuth()
+  const frontendRelease = (import.meta.env.VITE_RELEASE_ID as string | undefined)?.trim() || 'dev-local'
+  const [backendRelease, setBackendRelease] = useState<string | null>(null)
+  const [versionError, setVersionError] = useState<string | null>(null)
+
+  useEffect(() => {
+    let cancelled = false
+    async function checkRuntimeVersion() {
+      try {
+        const res = await fetch('/health/version', { credentials: 'same-origin' })
+        if (!res.ok) throw new Error(`HTTP ${res.status}`)
+        const data = (await res.json()) as RuntimeVersionResponse
+        if (!cancelled) {
+          setBackendRelease((data.release_id || '').trim() || 'unknown')
+          setVersionError(null)
+        }
+      } catch (e) {
+        if (!cancelled) {
+          setBackendRelease(null)
+          setVersionError(`Versionsprüfung nicht verfügbar (${String(e)}).`)
+        }
+      }
+    }
+    void checkRuntimeVersion()
+    return () => {
+      cancelled = true
+    }
+  }, [])
+
+  const versionWarning = useMemo(() => {
+    if (versionError) return versionError
+    if (!backendRelease) return null
+    if (backendRelease === frontendRelease) return null
+    return `Versionsabweichung erkannt: Frontend ${frontendRelease}, Backend ${backendRelease}. Bitte Deployment prüfen und Seite neu laden.`
+  }, [backendRelease, frontendRelease, versionError])
+
   if (loading) {
     return (
       <Box sx={{ display: 'flex', justifyContent: 'center', p: 4 }}>
@@ -36,7 +77,7 @@ function Protected({ children }: { children: React.ReactNode }) {
     )
   }
   if (!user) return <Navigate to="/login" replace />
-  return <AppShell>{children}</AppShell>
+  return <AppShell versionWarning={versionWarning}>{children}</AppShell>
 }
 
 const allRoles = ['ADMIN', 'ENGINEERING', 'FEEDBACK_PRODUCTION'] as const

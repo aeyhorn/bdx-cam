@@ -23,10 +23,13 @@ services:
     environment:
       DATABASE_URL: postgresql+psycopg2://postgres:postgres@db:5432/cam_feedback
       SECRET_KEY: ${SECRET_KEY:-dev-secret-change-me}
+      RELEASE_ID: ${RELEASE_ID:-dev-local}
       CORS_ORIGINS: http://localhost:5173,http://127.0.0.1:5173,http://localhost:8080,http://127.0.0.1:8080
       INITIAL_ADMIN_EMAIL: ${INITIAL_ADMIN_EMAIL:-admin@example.com}
       INITIAL_ADMIN_PASSWORD: ${INITIAL_ADMIN_PASSWORD:-ChangeMe123!}
       UPLOAD_DIR: /data/uploads
+      STEP_VIEWER_CACHE_DIR: ${STEP_VIEWER_CACHE_DIR:-/data/uploads/_step_cache}
+      STEP_CONVERTER_COMMAND: ${STEP_CONVERTER_COMMAND:-}
       SYSTEM_BUILD_AUTOINCREMENT_ON_STARTUP: ${SYSTEM_BUILD_AUTOINCREMENT_ON_STARTUP:-true}
       SYSTEM_BUILD_FORCE_INCREMENT: ${SYSTEM_BUILD_FORCE_INCREMENT:-true}
       SYSTEM_BUILD_STARTUP_SPECS: ${SYSTEM_BUILD_STARTUP_SPECS:-backend-api:0.1.0;frontend-web:0.1.0;post-library:1.0.0}
@@ -54,6 +57,8 @@ services:
     build:
       context: ./frontend
       dockerfile: Dockerfile
+      args:
+        VITE_RELEASE_ID: ${RELEASE_ID:-dev-local}
     ports:
       - "8080:80"
     depends_on:

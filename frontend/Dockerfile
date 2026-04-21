@@ -1,5 +1,7 @@
 FROM node:22-alpine AS build
 WORKDIR /app
+ARG VITE_RELEASE_ID=dev-local
+ENV VITE_RELEASE_ID=$VITE_RELEASE_ID
 COPY package.json package-lock.json* ./
 RUN npm ci || npm install
 COPY . .
