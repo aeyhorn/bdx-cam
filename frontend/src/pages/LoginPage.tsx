@@ -49,7 +49,7 @@ export function LoginPage() {
           Anmeldung
         </Typography>
         <Typography variant="body2" color="text.secondary" sx={{ mb: 2 }}>
-          CAM Feedback & Post Learning System
+          BDXPostOffice
         </Typography>
         {error && (
           <Alert severity="error" sx={{ mb: 2 }}>

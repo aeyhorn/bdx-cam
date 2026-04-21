@@ -29,6 +29,9 @@ class TestCase(Base):
     case_links: Mapped[list["CaseTestCase"]] = relationship(
         back_populates="test_case", cascade="all, delete-orphan"
     )
+    attachments: Mapped[list["TestCaseAttachment"]] = relationship(
+        back_populates="test_case", cascade="all, delete-orphan"
+    )
 
 
 class RegressionRun(Base):
@@ -56,3 +59,18 @@ class CaseTestCase(Base):
 
     case: Mapped["Case"] = relationship(back_populates="test_case_links")
     test_case: Mapped["TestCase"] = relationship(back_populates="case_links")
+
+
+class TestCaseAttachment(Base):
+    __tablename__ = "test_case_attachments"
+
+    id: Mapped[int] = mapped_column(primary_key=True, autoincrement=True)
+    test_case_id: Mapped[int] = mapped_column(ForeignKey("test_cases.id", ondelete="CASCADE"))
+    file_name: Mapped[str] = mapped_column(String(512))
+    file_type: Mapped[str | None] = mapped_column(String(128), nullable=True)
+    storage_path: Mapped[str] = mapped_column(String(1024))
+    attachment_role: Mapped[str] = mapped_column(String(32), default="program")
+    linked_project_name: Mapped[str | None] = mapped_column(String(255), nullable=True)
+    created_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), server_default=func.now())
+
+    test_case: Mapped["TestCase"] = relationship(back_populates="attachments")

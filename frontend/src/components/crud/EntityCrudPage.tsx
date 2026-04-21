@@ -15,7 +15,7 @@ import {
 } from '@mui/material'
 import { DataGrid, type GridColDef, type GridRenderCellParams } from '@mui/x-data-grid'
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query'
-import { useCallback, useEffect, useMemo, useState } from 'react'
+import { type ReactNode, useCallback, useEffect, useMemo, useState } from 'react'
 import { useForm } from 'react-hook-form'
 import { api } from '../../api/client'
 import { invalidateAfterEntityWrite } from '../../lib/queryCache'
@@ -51,6 +51,8 @@ export type EntityCrudPageProps = {
   canCreate?: boolean
   canEdit?: boolean
   canDelete?: boolean
+  headerActions?: ReactNode
+  onRowDoubleClick?: (row: Record<string, unknown>) => void
 }
 
 export function EntityCrudPage({
@@ -64,6 +66,8 @@ export function EntityCrudPage({
   canCreate = true,
   canEdit = true,
   canDelete = true,
+  headerActions,
+  onRowDoubleClick,
 }: EntityCrudPageProps) {
   const qc = useQueryClient()
   const [err, setErr] = useState<string | null>(null)
@@ -234,11 +238,14 @@ export function EntityCrudPage({
     <Box>
       <Stack direction="row" spacing={2} sx={{ justifyContent: 'space-between', alignItems: 'center', mb: 2 }}>
         <Typography variant="h6">{title}</Typography>
-        {canCreate && (
-          <Button variant="contained" onClick={() => { setEditRow(null); setOpen('create'); setErr(null) }}>
-            Neu anlegen
-          </Button>
-        )}
+        <Stack direction="row" spacing={1}>
+          {headerActions}
+          {canCreate && (
+            <Button variant="contained" onClick={() => { setEditRow(null); setOpen('create'); setErr(null) }}>
+              Neu anlegen
+            </Button>
+          )}
+        </Stack>
       </Stack>
       {err && (
         <Alert severity="error" sx={{ mb: 2 }} onClose={() => setErr(null)}>
@@ -255,6 +262,7 @@ export function EntityCrudPage({
           rowHeight={34}
           columnHeaderHeight={36}
           disableRowSelectionOnClick
+          onRowDoubleClick={(params) => onRowDoubleClick?.(params.row as Record<string, unknown>)}
           sx={{ fontSize: 12 }}
         />
       </Box>
@@ -267,6 +275,7 @@ export function EntityCrudPage({
               {activeFields.map((f) => {
                 if (f.kind === 'select') {
                   const hasExplicitEmpty = f.options.some((o) => o.value === '' || o.value === null)
+                  const current = watch(f.name)
                   return (
                     <TextField
                       key={f.name}
@@ -274,8 +283,8 @@ export function EntityCrudPage({
                       label={f.label}
                       fullWidth
                       required={f.required}
-                      defaultValue=""
-                      {...register(f.name)}
+                      value={current == null ? '' : (current as string | number)}
+                      onChange={(e) => setValue(f.name, e.target.value)}
                     >
                       {!hasExplicitEmpty && (f.emptyLabel !== undefined || !f.required) && (
                         <MenuItem value="">

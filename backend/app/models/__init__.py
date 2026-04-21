@@ -12,7 +12,7 @@ from app.models.post_version import PostProcessorVersion
 from app.models.role import Role
 from app.models.root_cause import RootCause
 from app.models.system_build import SystemBuildVersion
-from app.models.test_case import CaseTestCase, RegressionRun, TestCase
+from app.models.test_case import CaseTestCase, RegressionRun, TestCase, TestCaseAttachment
 from app.models.user import User
 
 __all__ = [
@@ -39,5 +39,6 @@ __all__ = [
     "Status",
     "SystemBuildVersion",
     "TestCase",
+    "TestCaseAttachment",
     "User",
 ]

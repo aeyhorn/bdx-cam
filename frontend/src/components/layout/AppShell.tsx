@@ -17,7 +17,7 @@ import { useState } from 'react'
 import { Link, useLocation, useNavigate } from 'react-router-dom'
 import { useAuth, type RoleKey } from '../../context/AuthContext'
 
-const drawerWidth = 260
+const drawerWidth = 220
 
 type NavItem = { to: string; label: string; roles: RoleKey[] }
 
@@ -60,7 +60,7 @@ export function AppShell({ children }: { children: React.ReactNode }) {
     <Box sx={{ height: '100%', display: 'flex', flexDirection: 'column' }}>
       <Toolbar>
         <Typography variant="subtitle1" sx={{ fontWeight: 700 }}>
-          CAM Feedback
+          BDXPostOffice
         </Typography>
       </Toolbar>
       <Divider />
@@ -100,7 +100,7 @@ export function AppShell({ children }: { children: React.ReactNode }) {
             </IconButton>
           )}
           <Typography variant="h6" sx={{ flexGrow: 1 }}>
-            CAM Feedback & Post Learning
+            BDXPostOffice
           </Typography>
         </Toolbar>
       </AppBar>
@@ -120,7 +120,18 @@ export function AppShell({ children }: { children: React.ReactNode }) {
           {drawer}
         </Drawer>
       </Box>
-      <Box component="main" sx={{ flexGrow: 1, p: 3, width: { md: `calc(100% - ${drawerWidth}px)` }, mt: 8 }}>
+      <Box
+        component="main"
+        sx={{
+          flexGrow: 1,
+          pt: 2,
+          pb: 2,
+          pl: { xs: 1, md: 0 },
+          pr: { xs: 1, md: 1 },
+          width: { md: `calc(100% - ${drawerWidth}px)` },
+          mt: 8,
+        }}
+      >
         {children}
       </Box>
     </Box>

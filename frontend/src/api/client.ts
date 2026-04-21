@@ -27,7 +27,6 @@ const baseURL = resolveApiBaseURL()
 
 export const api = axios.create({
   baseURL: baseURL || undefined,
-  headers: { 'Content-Type': 'application/json' },
 })
 
 export function getStoredTokens(): { access: string | null; refresh: string | null } {
@@ -48,6 +47,12 @@ export function clearStoredTokens() {
 }
 
 api.interceptors.request.use((config) => {
+  // Let the browser set multipart boundaries for FormData requests.
+  if (config.data instanceof FormData && config.headers) {
+    delete config.headers['Content-Type']
+  } else if (config.headers && !config.headers['Content-Type']) {
+    config.headers['Content-Type'] = 'application/json'
+  }
   const { access } = getStoredTokens()
   if (access) {
     config.headers.Authorization = `Bearer ${access}`
