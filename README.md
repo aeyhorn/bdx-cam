@@ -83,6 +83,8 @@ alembic revision --autogenerate -m "beschreibung"
 | `ACCESS_TOKEN_EXPIRE_MINUTES` / `REFRESH_TOKEN_EXPIRE_DAYS` | Token-Laufzeiten |
 | `UPLOAD_DIR` | Verzeichnis für Anhänge |
 | `MAX_UPLOAD_MB` | max. Uploadgröße (Default 100) |
+| `STEP_VIEWER_CACHE_DIR` | Cache-Verzeichnis für konvertierte STEP-Modelle (GLB) |
+| `STEP_CONVERTER_COMMAND` | Kommando-Template zur STEP→GLB-Konvertierung (`{input}`, `{output}`) |
 | `CORS_ORIGINS` | Komma-separierte Origins |
 | `INITIAL_ADMIN_EMAIL` / `INITIAL_ADMIN_PASSWORD` | erster Admin |
 

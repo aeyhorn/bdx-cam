@@ -15,6 +15,8 @@ class PostProcessorVersionOut(ORMModel):
     is_productive: bool
     release_date: date | None
     notes: str | None
+    code_file_name: str | None = None
+    code_file_type: str | None = None
     created_at: datetime
     updated_at: datetime
 

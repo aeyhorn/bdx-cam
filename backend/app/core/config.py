@@ -18,6 +18,8 @@ class Settings(BaseSettings):
 
     UPLOAD_DIR: str = "./uploads"
     MAX_UPLOAD_MB: int = 100
+    STEP_VIEWER_CACHE_DIR: str = "./uploads/_step_cache"
+    STEP_CONVERTER_COMMAND: str = ""
 
     CORS_ORIGINS: str = "http://localhost:5173,http://127.0.0.1:5173,http://localhost:8080,http://127.0.0.1:8080"
 
@@ -27,6 +29,12 @@ class Settings(BaseSettings):
     SYSTEM_BUILD_FORCE_INCREMENT: bool = False
     # format: "component:version;component:version"
     SYSTEM_BUILD_STARTUP_SPECS: str = "backend-api:0.1.0"
+    AI_AGENT_ENABLED: bool = False
+    AI_AGENT_PROVIDER: str = "openai_compatible"
+    AI_AGENT_BASE_URL: str = "https://api.openai.com/v1/chat/completions"
+    AI_AGENT_API_KEY: str | None = None
+    AI_AGENT_MODEL: str = "gpt-4o-mini"
+    AI_AGENT_TIMEOUT_SECONDS: int = 45
 
     @property
     def max_upload_bytes(self) -> int:

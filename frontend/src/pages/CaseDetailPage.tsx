@@ -32,6 +32,8 @@ import { useParams } from 'react-router-dom'
 import { api } from '../api/client'
 import { invalidateCaseEcosystem } from '../lib/queryCache'
 import { useAuth } from '../context/AuthContext'
+import { TextFileEditorDialog } from '../components/common/TextFileEditorDialog'
+import { Step3DViewer } from '../components/common/Step3DViewer'
 
 type CaseDetail = {
   id: number
@@ -80,6 +82,15 @@ type Attachment = {
   notes?: string | null
   created_at: string
   download_url?: string
+}
+
+type AgentRun = {
+  id: number
+  status: string
+  trigger_mode: string
+  output_summary?: string | null
+  knowledge_entry_id?: number | null
+  created_at: string
 }
 
 function statusKeyToStep(key: string): number {
@@ -138,7 +149,7 @@ export function CaseDetailPage() {
 
   const attachments = useQuery({
     queryKey: ['case', caseId, 'attachments'],
-    enabled: Number.isFinite(caseId) && (tab === 2 || (isEng && tab === 0)),
+    enabled: Number.isFinite(caseId) && (tab === 2 || tab === 6 || (isEng && tab === 0)),
     queryFn: async () => (await api.get<Attachment[]>(`/api/v1/cases/${caseId}/attachments`)).data,
   })
 
@@ -158,6 +169,22 @@ export function CaseDetailPage() {
     queryKey: ['case', caseId, 'hist'],
     enabled: tab === 4 && Number.isFinite(caseId),
     queryFn: async () => (await api.get(`/api/v1/cases/${caseId}/history`)).data as Record<string, unknown>[],
+  })
+
+  const agentRuns = useQuery({
+    queryKey: ['case', caseId, 'agent-runs'],
+    enabled: Number.isFinite(caseId) && tab === 5,
+    queryFn: async () => (await api.get<AgentRun[]>(`/api/v1/agent-runs/case/${caseId}`)).data,
+  })
+
+  const startAgent = useMutation({
+    mutationFn: async () => api.post('/api/v1/agent-runs/start', { case_id: caseId, trigger_mode: 'manual' }),
+    onSuccess: () => {
+      qc.invalidateQueries({ queryKey: ['case', caseId, 'agent-runs'] })
+      qc.invalidateQueries({ queryKey: ['knowledge'] })
+      setMsg('Agentenprüfung gestartet und abgeschlossen.')
+    },
+    onError: (e: unknown) => setMsg(String((e as { response?: { data?: { detail?: string } } }).response?.data?.detail ?? e)),
   })
 
   const relations = useQuery({
@@ -354,6 +381,7 @@ export function CaseDetailPage() {
   const [uploadLinkProject, setUploadLinkProject] = useState(true)
   const [uploadProjectName, setUploadProjectName] = useState('')
   const [uploadNotes, setUploadNotes] = useState('')
+  const [selectedStepAttachmentId, setSelectedStepAttachmentId] = useState('')
   const [metaOpen, setMetaOpen] = useState(false)
   const [metaAtt, setMetaAtt] = useState<Attachment | null>(null)
   const [metaRole, setMetaRole] = useState<'other' | 'post' | 'generated_program'>('other')
@@ -428,12 +456,21 @@ export function CaseDetailPage() {
         </Alert>
       )}
 
-      <Tabs value={tab} onChange={(_, v) => setTab(v)} sx={{ mb: 2 }}>
+      <Tabs
+        value={tab}
+        onChange={(_, v) => setTab(v)}
+        variant="scrollable"
+        scrollButtons="auto"
+        allowScrollButtonsMobile
+        sx={{ mb: 2 }}
+      >
         <Tab label="Übersicht" />
         <Tab label="Kommentare" />
         <Tab label="Anhänge (NC / Daten)" />
         <Tab label="Technische Analyse" />
         <Tab label="Historie" />
+        <Tab label="Agentenprüfung" />
+        <Tab label="3D Viewer" />
       </Tabs>
 
       {tab === 0 && (
@@ -808,6 +845,77 @@ export function CaseDetailPage() {
         </Stack>
       )}
 
+      {tab === 5 && (
+        <Stack spacing={2}>
+          <Button variant="contained" onClick={() => startAgent.mutate()} disabled={startAgent.isPending}>
+            Agentenprüfung starten
+          </Button>
+          <Table size="small">
+            <TableHead>
+              <TableRow>
+                <TableCell>ID</TableCell>
+                <TableCell>Status</TableCell>
+                <TableCell>Trigger</TableCell>
+                <TableCell>Zusammenfassung</TableCell>
+                <TableCell>Knowledge-ID</TableCell>
+                <TableCell>Zeit</TableCell>
+              </TableRow>
+            </TableHead>
+            <TableBody>
+              {(agentRuns.data ?? []).map((r) => (
+                <TableRow key={r.id}>
+                  <TableCell>{r.id}</TableCell>
+                  <TableCell>{r.status}</TableCell>
+                  <TableCell>{r.trigger_mode}</TableCell>
+                  <TableCell>{r.output_summary || '—'}</TableCell>
+                  <TableCell>{r.knowledge_entry_id ?? '—'}</TableCell>
+                  <TableCell>{new Date(r.created_at).toLocaleString()}</TableCell>
+                </TableRow>
+              ))}
+              {(agentRuns.data ?? []).length === 0 && (
+                <TableRow>
+                  <TableCell colSpan={6}>Noch keine Agentenläufe vorhanden.</TableCell>
+                </TableRow>
+              )}
+            </TableBody>
+          </Table>
+        </Stack>
+      )}
+
+      {tab === 6 && (
+        <Stack spacing={2}>
+          <TextField
+            select
+            label="STEP-Datei"
+            size="small"
+            sx={{ maxWidth: 420 }}
+            value={selectedStepAttachmentId}
+            onChange={(e) => setSelectedStepAttachmentId(e.target.value)}
+          >
+            <MenuItem value="">
+              <em>— bitte wählen —</em>
+            </MenuItem>
+            {(attachments.data ?? [])
+              .filter((a) => {
+                const name = a.file_name.toLowerCase()
+                return name.endsWith('.step') || name.endsWith('.stp')
+              })
+              .map((a) => (
+                <MenuItem key={a.id} value={a.id}>
+                  {a.file_name}
+                </MenuItem>
+              ))}
+          </TextField>
+          <Step3DViewer
+            attachment={
+              selectedStepAttachmentId
+                ? ((attachments.data ?? []).find((a) => a.id === Number(selectedStepAttachmentId)) ?? null)
+                : null
+            }
+          />
+        </Stack>
+      )}
+
       <Dialog open={metaOpen} onClose={() => setMetaOpen(false)} maxWidth="sm" fullWidth>
         <DialogTitle>Datei-Zuordnung</DialogTitle>
         <DialogContent>
@@ -850,29 +958,16 @@ export function CaseDetailPage() {
         </DialogActions>
       </Dialog>
 
-      <Dialog open={textOpen} onClose={() => setTextOpen(false)} maxWidth="lg" fullWidth>
-        <DialogTitle>{`Text-Editor: ${textFileName}`}</DialogTitle>
-        <DialogContent>
-          <TextField
-            fullWidth
-            multiline
-            minRows={18}
-            value={textContent}
-            onChange={(e) => setTextContent(e.target.value)}
-            slotProps={{ input: { sx: { fontFamily: 'Consolas, monospace', fontSize: 12 } } }}
-          />
-        </DialogContent>
-        <DialogActions>
-          <Button onClick={() => setTextOpen(false)}>Schließen</Button>
-          <Button
-            variant="contained"
-            disabled={textAttId == null || saveTextMut.isPending}
-            onClick={() => textAttId != null && saveTextMut.mutate({ id: textAttId, content: textContent })}
-          >
-            Speichern
-          </Button>
-        </DialogActions>
-      </Dialog>
+      <TextFileEditorDialog
+        open={textOpen}
+        title={`Text-Editor: ${textFileName}`}
+        content={textContent}
+        onChange={setTextContent}
+        onClose={() => setTextOpen(false)}
+        onSave={() => textAttId != null && saveTextMut.mutate({ id: textAttId, content: textContent })}
+        isSaving={saveTextMut.isPending}
+        saveDisabled={textAttId == null}
+      />
     </Box>
   )
 }

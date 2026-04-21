@@ -18,6 +18,9 @@ class PostProcessorVersion(Base):
     is_productive: Mapped[bool] = mapped_column(Boolean, default=False)
     release_date: Mapped[date | None] = mapped_column(Date, nullable=True)
     notes: Mapped[str | None] = mapped_column(Text, nullable=True)
+    code_file_name: Mapped[str | None] = mapped_column(String(512), nullable=True)
+    code_file_type: Mapped[str | None] = mapped_column(String(128), nullable=True)
+    code_storage_path: Mapped[str | None] = mapped_column(String(1024), nullable=True)
     deleted_at: Mapped[datetime | None] = mapped_column(DateTime(timezone=True), nullable=True)
     created_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), server_default=func.now())
     updated_at: Mapped[datetime] = mapped_column(

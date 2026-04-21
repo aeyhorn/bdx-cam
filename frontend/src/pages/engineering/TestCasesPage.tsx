@@ -4,6 +4,7 @@ import type { GridColDef } from '@mui/x-data-grid'
 import { api } from '../../api/client'
 import { Alert, Button, Chip, Dialog, DialogActions, DialogContent, DialogTitle, MenuItem, Stack, Table, TableBody, TableCell, TableHead, TableRow, TextField, Typography } from '@mui/material'
 import { EntityCrudPage, type CrudField } from '../../components/crud/EntityCrudPage'
+import { TextFileEditorDialog } from '../../components/common/TextFileEditorDialog'
 import { invalidateAfterEntityWrite } from '../../lib/queryCache'
 
 type Machine = { id: number; name: string }
@@ -404,25 +405,16 @@ export function TestCasesPage() {
         </DialogActions>
       </Dialog>
 
-      <Dialog open={textOpen} onClose={() => setTextOpen(false)} maxWidth="lg" fullWidth>
-        <DialogTitle>{`Datei-Editor: ${textFileName}`}</DialogTitle>
-        <DialogContent>
-          <TextField
-            fullWidth
-            multiline
-            minRows={18}
-            value={textContent}
-            onChange={(e) => setTextContent(e.target.value)}
-            slotProps={{ input: { sx: { fontFamily: 'Consolas, monospace', fontSize: 12 } } }}
-          />
-        </DialogContent>
-        <DialogActions>
-          <Button onClick={() => setTextOpen(false)}>Schließen</Button>
-          <Button variant="contained" disabled={textAttId == null || saveTextMut.isPending} onClick={() => textAttId != null && saveTextMut.mutate({ id: textAttId, content: textContent })}>
-            Speichern
-          </Button>
-        </DialogActions>
-      </Dialog>
+      <TextFileEditorDialog
+        open={textOpen}
+        title={`Datei-Editor: ${textFileName}`}
+        content={textContent}
+        onChange={setTextContent}
+        onClose={() => setTextOpen(false)}
+        onSave={() => textAttId != null && saveTextMut.mutate({ id: textAttId, content: textContent })}
+        isSaving={saveTextMut.isPending}
+        saveDisabled={textAttId == null}
+      />
     </>
   )
 }

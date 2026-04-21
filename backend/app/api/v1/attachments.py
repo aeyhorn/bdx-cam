@@ -21,6 +21,8 @@ from app.schemas.attachment import (
 )
 from app.services.audit_service import log_action
 from app.services.case_access import ensure_case_readable, ensure_case_writable_production
+from app.services.step_viewer import ensure_step_glb
+from app.services.text_files import is_text_content
 
 router = APIRouter(tags=["attachments"])
 
@@ -218,14 +220,24 @@ def download_attachment(
     return FileResponse(path, filename=att.file_name)
 
 
+@router.get("/attachments/{attachment_id}/viewer-model")
+def download_attachment_viewer_model(
+    attachment_id: int,
+    db: Annotated[Session, Depends(get_db)],
+    user: Annotated[User, Depends(get_current_user)],
+) -> FileResponse:
+    att = db.get(CaseAttachment, attachment_id)
+    if att is None:
+        raise HTTPException(status.HTTP_404_NOT_FOUND, detail="Not found")
+    c = db.get(Case, att.case_id)
+    assert c is not None
+    ensure_case_readable(user, c)
+    model_path = ensure_step_glb(att)
+    return FileResponse(model_path, filename=f"{Path(att.file_name).stem}.glb", media_type="model/gltf-binary")
+
+
 def _is_text_file(att: CaseAttachment) -> bool:
-    if att.file_type and (
-        att.file_type.startswith("text/")
-        or att.file_type in ("application/json", "application/xml", "application/javascript")
-    ):
-        return True
-    ext = Path(att.file_name).suffix.lower()
-    return ext in {".nc", ".txt", ".tap", ".gcode", ".md", ".json", ".xml", ".log", ".csv", ".py"}
+    return is_text_content(att.file_name, att.file_type)
 
 
 @router.get("/attachments/{attachment_id}/text", response_model=AttachmentTextOut)

@@ -1,4 +1,5 @@
 from app.models.audit import AuditLog, TicketCounter
+from app.models.agent_run import AgentRun
 from app.models.case import Case
 from app.models.toolchain import CamStepModel, MachinePostBinding
 from app.models.change_request import ChangeRequest, ChangeRequestCase
@@ -17,6 +18,7 @@ from app.models.user import User
 
 __all__ = [
     "AuditLog",
+    "AgentRun",
     "TicketCounter",
     "CamStepModel",
     "Case",

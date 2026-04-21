@@ -26,6 +26,7 @@ from app.schemas.test_case import (
 )
 from app.services.audit_service import log_action
 from app.services.case_access import ensure_case_readable
+from app.services.text_files import is_text_content
 
 router = APIRouter(tags=["test-cases"])
 def _tc_upload_dir(test_case_id: int) -> Path:
@@ -417,13 +418,7 @@ def delete_test_case_attachment(
 
 
 def _is_text_test_case_attachment(att: TestCaseAttachment) -> bool:
-    if att.file_type and (
-        att.file_type.startswith("text/")
-        or att.file_type in ("application/json", "application/xml", "application/javascript")
-    ):
-        return True
-    ext = Path(att.file_name).suffix.lower()
-    return ext in {".nc", ".txt", ".tap", ".gcode", ".md", ".json", ".xml", ".log", ".csv", ".py", ".step", ".stp"}
+    return is_text_content(att.file_name, att.file_type)
 
 
 @router.get("/test-case-attachments/{attachment_id}/text")
