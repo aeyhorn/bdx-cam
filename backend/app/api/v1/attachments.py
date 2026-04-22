@@ -3,7 +3,7 @@ import uuid
 from pathlib import Path
 from typing import Annotated
 
-from fastapi import APIRouter, Depends, File, Form, HTTPException, UploadFile, status
+from fastapi import APIRouter, BackgroundTasks, Depends, File, Form, HTTPException, UploadFile, status
 from fastapi.responses import FileResponse
 from sqlalchemy import select
 from sqlalchemy.orm import Session
@@ -20,6 +20,7 @@ from app.schemas.attachment import (
     AttachmentUploadResponse,
 )
 from app.services.audit_service import log_action
+from app.services.agent_run_service import create_queued_agent_run, process_agent_run_task
 from app.services.case_access import ensure_case_readable, ensure_case_writable_production
 from app.services.step_viewer import ensure_step_glb
 from app.services.text_files import is_text_content
@@ -51,6 +52,7 @@ def list_attachments(
 @router.post("/cases/{case_id}/attachments", response_model=AttachmentUploadResponse, status_code=status.HTTP_201_CREATED)
 async def upload_attachment(
     case_id: int,
+    background_tasks: BackgroundTasks,
     db: Annotated[Session, Depends(get_db)],
     user: Annotated[User, Depends(get_current_user)],
     file: UploadFile = File(...),
@@ -111,6 +113,23 @@ async def upload_attachment(
     )
     db.commit()
     db.refresh(att)
+    auto_run = create_queued_agent_run(
+        db,
+        started_by=user.id,
+        case_id=case_id,
+        trigger_mode="auto_attachment_upload",
+    )
+    log_action(
+        db,
+        entity_type="AgentRun",
+        entity_id=auto_run.id,
+        action="auto_queued",
+        performed_by=user.id,
+        new_value={"case_id": case_id, "attachment_id": att.id, "status": auto_run.status},
+        case_id=case_id,
+    )
+    db.commit()
+    background_tasks.add_task(process_agent_run_task, auto_run.id)
     return AttachmentUploadResponse(
         id=att.id,
         case_id=att.case_id,

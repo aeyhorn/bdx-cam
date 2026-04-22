@@ -12,7 +12,7 @@ const steps = [
   },
   {
     title: '3. Umsetzung & Test',
-    body: 'Change Requests verknüpfen, Testfälle definieren und mit dem Fall verknüpfen. Regression auf der Maschine mit Post-Version dokumentieren.',
+    body: 'Change Requests verknüpfen, Programmierfälle definieren und mit dem Standardfall verknüpfen. Regression auf der Maschine mit Post-Version dokumentieren.',
   },
   {
     title: '4. Validierung & Abschluss',

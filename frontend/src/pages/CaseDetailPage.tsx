@@ -90,6 +90,7 @@ type AgentRun = {
   trigger_mode: string
   output_summary?: string | null
   knowledge_entry_id?: number | null
+  error_message?: string | null
   created_at: string
 }
 
@@ -182,7 +183,16 @@ export function CaseDetailPage() {
     onSuccess: () => {
       qc.invalidateQueries({ queryKey: ['case', caseId, 'agent-runs'] })
       qc.invalidateQueries({ queryKey: ['knowledge'] })
-      setMsg('Agentenprüfung gestartet und abgeschlossen.')
+      setMsg('Agentenprüfung in Queue gestellt.')
+    },
+    onError: (e: unknown) => setMsg(String((e as { response?: { data?: { detail?: string } } }).response?.data?.detail ?? e)),
+  })
+
+  const retryAgent = useMutation({
+    mutationFn: async (runId: number) => api.post(`/api/v1/agent-runs/${runId}/retry`),
+    onSuccess: () => {
+      qc.invalidateQueries({ queryKey: ['case', caseId, 'agent-runs'] })
+      setMsg('Agentenlauf erneut in Queue gestellt.')
     },
     onError: (e: unknown) => setMsg(String((e as { response?: { data?: { detail?: string } } }).response?.data?.detail ?? e)),
   })
@@ -276,7 +286,7 @@ export function CaseDetailPage() {
     onSuccess: () => {
       invalidateCaseEcosystem(qc, caseId)
       setLinkTc('')
-      setMsg('Testfall verknüpft.')
+      setMsg('Programmierfall verknüpft.')
     },
     onError: (e: unknown) => setMsg(String((e as { response?: { data?: { detail?: string } } }).response?.data?.detail ?? e)),
   })
@@ -628,7 +638,7 @@ export function CaseDetailPage() {
                   <Button variant="outlined" disabled={!linkCr} onClick={() => linkCrMut.mutate()}>
                     Verknüpfen
                   </Button>
-                  <TextField select label="Testfall verknüpfen" size="small" sx={{ minWidth: 240 }} value={linkTc} onChange={(e) => setLinkTc(e.target.value)}>
+                  <TextField select label="Programmierfall verknüpfen" size="small" sx={{ minWidth: 240 }} value={linkTc} onChange={(e) => setLinkTc(e.target.value)}>
                     {(tcs.data ?? []).map((r) => (
                       <MenuItem key={r.id} value={r.id}>
                         {r.title}
@@ -655,7 +665,7 @@ export function CaseDetailPage() {
                   ))}
                 </Stack>
                 <Typography variant="caption" sx={{ display: 'block' }}>
-                  Testfälle
+                  Programmierfälle
                 </Typography>
                 <Stack spacing={0.5}>
                   {(relations.data.test_cases ?? []).map((r) => (
@@ -858,7 +868,9 @@ export function CaseDetailPage() {
                 <TableCell>Trigger</TableCell>
                 <TableCell>Zusammenfassung</TableCell>
                 <TableCell>Knowledge-ID</TableCell>
+                <TableCell>Fehler</TableCell>
                 <TableCell>Zeit</TableCell>
+                <TableCell align="right">Aktion</TableCell>
               </TableRow>
             </TableHead>
             <TableBody>
@@ -869,12 +881,20 @@ export function CaseDetailPage() {
                   <TableCell>{r.trigger_mode}</TableCell>
                   <TableCell>{r.output_summary || '—'}</TableCell>
                   <TableCell>{r.knowledge_entry_id ?? '—'}</TableCell>
+                  <TableCell>{r.error_message || '—'}</TableCell>
                   <TableCell>{new Date(r.created_at).toLocaleString()}</TableCell>
+                  <TableCell align="right">
+                    {(r.status === 'failed' || r.status === 'completed') && (
+                      <Button size="small" onClick={() => retryAgent.mutate(r.id)} disabled={retryAgent.isPending}>
+                        Retry
+                      </Button>
+                    )}
+                  </TableCell>
                 </TableRow>
               ))}
               {(agentRuns.data ?? []).length === 0 && (
                 <TableRow>
-                  <TableCell colSpan={6}>Noch keine Agentenläufe vorhanden.</TableCell>
+                  <TableCell colSpan={8}>Noch keine Agentenläufe vorhanden.</TableCell>
                 </TableRow>
               )}
             </TableBody>

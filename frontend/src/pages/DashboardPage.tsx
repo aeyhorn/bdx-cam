@@ -42,7 +42,7 @@ export function DashboardPage() {
     return (
       <Grid container spacing={2}>
         <Tile title="Aktive Nutzer" value={d?.active_users} />
-        <Tile title="Offene Fälle" value={d?.open_cases} />
+        <Tile title="Offene Standardfälle" value={d?.open_cases} />
         <Grid size={{ xs: 12 }}>
           <Paper sx={{ p: 2 }}>
             <Typography variant="subtitle2">Häufigste Fehlerkategorien</Typography>
@@ -67,7 +67,7 @@ export function DashboardPage() {
     const builds = (d?.system_builds ?? []) as BuildStatus[]
     return (
       <Grid container spacing={2}>
-        <Tile title="Neue Fälle" value={d?.new_cases} />
+        <Tile title="Neue Standardfälle" value={d?.new_cases} />
         <Tile title="Kritisch" value={d?.critical_cases} />
         <Tile title="Unzugewiesen" value={d?.unassigned_cases} />
         <Tile title="Ohne Root Cause" value={d?.cases_without_root_cause} />
@@ -84,7 +84,7 @@ export function DashboardPage() {
   const builds = (d?.system_builds ?? []) as BuildStatus[]
   return (
     <Grid container spacing={2}>
-      <Tile title="Meine offenen Fälle" value={d?.my_open_cases} />
+      <Tile title="Meine offenen Standardfälle" value={d?.my_open_cases} />
       <Tile title="Offene Rückfragen" value={d?.open_questions} />
       <Grid size={{ xs: 12 }}>
         <Paper sx={{ p: 2 }}>

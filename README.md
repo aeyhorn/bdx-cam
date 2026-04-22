@@ -99,7 +99,7 @@ alembic revision --autogenerate -m "beschreibung"
 
 Basis: `/api/v1` — Auth (`/auth/login`, `/auth/refresh`, `/auth/me`), Benutzer, Rollen, Stammdaten, Fälle, Kommentare, Anhänge, Root Cause, Change Requests, Testfälle, Regressionen, Knowledge, Dashboards.
 
-Zusätzlich: `GET /health/version` liefert den aktuellen Backend-Release-Stand (`release_id`), damit das Frontend Versionsabweichungen anzeigen kann.
+Zusätzlich: `GET /api/v1/meta/version` liefert den aktuellen Backend-Release-Stand (`release_id`), damit das Frontend Versionsabweichungen anzeigen kann.
 
 Hinweis 3D-Viewer: Wenn beim Öffnen einer STEP-Datei eine Fehlermeldung erscheint, fehlt meist `STEP_CONVERTER_COMMAND` im Backend-Deployment oder der Konverter ist im Container/Server nicht installiert. Das Frontend zeigt die konkrete Backend-Fehlermeldung an.
 

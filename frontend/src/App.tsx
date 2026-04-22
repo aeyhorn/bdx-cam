@@ -14,7 +14,6 @@ import { UsersAdminPage } from './pages/admin/UsersAdminPage'
 import { MachinesAdminPage } from './pages/admin/MachinesAdminPage'
 import { ControlSystemsAdminPage } from './pages/admin/ControlSystemsAdminPage'
 import { PostVersionsAdminPage } from './pages/admin/PostVersionsAdminPage'
-import { CamStepModelsAdminPage } from './pages/admin/CamStepModelsAdminPage'
 import { MachinePostBindingsAdminPage } from './pages/admin/MachinePostBindingsAdminPage'
 import { CategoriesAdminPage } from './pages/admin/CategoriesAdminPage'
 import { StatusesAdminPage } from './pages/admin/StatusesAdminPage'
@@ -42,7 +41,7 @@ function Protected({ children }: { children: React.ReactNode }) {
     let cancelled = false
     async function checkRuntimeVersion() {
       try {
-        const res = await fetch('/health/version', { credentials: 'same-origin' })
+        const res = await fetch('/api/v1/meta/version', { credentials: 'same-origin' })
         if (!res.ok) throw new Error(`HTTP ${res.status}`)
         const data = (await res.json()) as RuntimeVersionResponse
         if (!cancelled) {
@@ -218,16 +217,6 @@ export default function App() {
           <Protected>
             <RoleGuard allow={['ADMIN']}>
               <PostVersionsAdminPage />
-            </RoleGuard>
-          </Protected>
-        }
-      />
-      <Route
-        path="/admin/cam-step-models"
-        element={
-          <Protected>
-            <RoleGuard allow={['ADMIN']}>
-              <CamStepModelsAdminPage />
             </RoleGuard>
           </Protected>
         }

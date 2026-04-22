@@ -13,6 +13,7 @@ from app.api.v1 import (
     dashboard,
     knowledge,
     lookup_meta,
+    meta,
     machine_post_bindings,
     machines,
     post_versions,
@@ -36,6 +37,7 @@ api_router.include_router(cam_step_models.router)
 api_router.include_router(machine_post_bindings.router)
 api_router.include_router(categories.router)
 api_router.include_router(lookup_meta.router)
+api_router.include_router(meta.router)
 api_router.include_router(cases.router)
 api_router.include_router(comments.router)
 api_router.include_router(attachments.router)

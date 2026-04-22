@@ -161,7 +161,7 @@ export function TestCasesPage() {
 
   const uploadMut = useMutation({
     mutationFn: async (f: File) => {
-      if (!detailId) throw new Error('Kein Testfall gewählt')
+      if (!detailId) throw new Error('Kein Programmierfall gewählt')
       const fd = new FormData()
       fd.append('file', f)
       fd.append('attachment_role', uploadRole)
@@ -214,7 +214,7 @@ export function TestCasesPage() {
   return (
     <>
       <EntityCrudPage
-        title="Testfälle"
+        title="Programmierfälle"
         resourceBase="/api/v1/test-cases"
         queryKey={['test-cases']}
         columns={columns}
@@ -227,7 +227,7 @@ export function TestCasesPage() {
         }
       />
       <Dialog open={importOpen} onClose={() => setImportOpen(false)} maxWidth="sm" fullWidth>
-      <DialogTitle>Testfälle importieren</DialogTitle>
+      <DialogTitle>Programmierfälle importieren</DialogTitle>
       <DialogContent>
         <Stack spacing={2} sx={{ pt: 1 }}>
           {importError && <Alert severity="error">{importError}</Alert>}
@@ -281,9 +281,9 @@ export function TestCasesPage() {
       </Dialog>
 
       <Dialog open={detailId != null} onClose={() => setDetailId(null)} maxWidth="lg" fullWidth>
-        <DialogTitle>Testfall-Container</DialogTitle>
+        <DialogTitle>Programmierfall-Container</DialogTitle>
         <DialogContent>
-          {detail.isLoading && <Typography>Lade Testfall...</Typography>}
+          {detail.isLoading && <Typography>Lade Programmierfall...</Typography>}
           {!detail.isLoading && detail.data && (
             <Stack spacing={2} sx={{ pt: 1 }}>
               <Stack direction="row" spacing={1} sx={{ flexWrap: 'wrap' }}>

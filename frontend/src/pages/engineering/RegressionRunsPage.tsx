@@ -111,7 +111,7 @@ export function RegressionRunsPage() {
   const columns: GridColDef[] = useMemo(
     () => [
       { field: 'id', headerName: 'ID', width: 70 },
-      { field: 'test_case_id', headerName: 'Testfall-ID', width: 110 },
+      { field: 'test_case_id', headerName: 'Programmierfall-ID', width: 130 },
       { field: 'post_processor_version_id', headerName: 'Post-V.', width: 100 },
       { field: 'result', headerName: 'Ergebnis', width: 110 },
       { field: 'notes', headerName: 'Notizen', flex: 1, minWidth: 160 },
@@ -175,7 +175,7 @@ export function RegressionRunsPage() {
         <DialogTitle>Regression dokumentieren</DialogTitle>
         <DialogContent>
           <Stack spacing={2} sx={{ pt: 1 }}>
-            <TextField select label="Testfall" required fullWidth value={fTc} onChange={(e) => setFTc(e.target.value)}>
+            <TextField select label="Programmierfall" required fullWidth value={fTc} onChange={(e) => setFTc(e.target.value)}>
               {(tcs.data ?? []).map((t) => (
                 <MenuItem key={t.id} value={t.id}>
                   {t.title}
