@@ -26,6 +26,7 @@ const navItems: NavItem[] = [
   { to: '/dashboard', label: 'Dashboard', roles: ['ADMIN', 'ENGINEERING', 'FEEDBACK_PRODUCTION'] },
   { to: '/workflow', label: 'Validierungskreislauf', roles: ['ADMIN', 'ENGINEERING', 'FEEDBACK_PRODUCTION'] },
   { to: '/feedback/new', label: 'Problem melden', roles: ['FEEDBACK_PRODUCTION'] },
+  { to: '/shopfloor-tests', label: 'Pruefauftraege', roles: ['FEEDBACK_PRODUCTION'] },
   { to: '/cases/mine', label: 'Meine Standardfälle', roles: ['FEEDBACK_PRODUCTION'] },
   { to: '/cases', label: 'Alle Standardfälle', roles: ['ADMIN', 'ENGINEERING'] },
   { to: '/change-requests', label: 'Change Requests', roles: ['ADMIN', 'ENGINEERING'] },

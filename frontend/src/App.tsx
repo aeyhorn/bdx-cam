@@ -7,6 +7,7 @@ import { DashboardPage } from './pages/DashboardPage'
 import { CasesPage } from './pages/CasesPage'
 import { CaseDetailPage } from './pages/CaseDetailPage'
 import { NewFeedbackPage } from './pages/NewFeedbackPage'
+import { ShopfloorTestRunsPage } from './pages/ShopfloorTestRunsPage'
 import { NotFoundPage } from './pages/NotFoundPage'
 import { HelpPage } from './pages/HelpPage'
 import { WorkflowPage } from './pages/WorkflowPage'
@@ -119,6 +120,16 @@ export default function App() {
           <Protected>
             <RoleGuard allow={['FEEDBACK_PRODUCTION']}>
               <CasesPage />
+            </RoleGuard>
+          </Protected>
+        }
+      />
+      <Route
+        path="/shopfloor-tests"
+        element={
+          <Protected>
+            <RoleGuard allow={['FEEDBACK_PRODUCTION']}>
+              <ShopfloorTestRunsPage />
             </RoleGuard>
           </Protected>
         }

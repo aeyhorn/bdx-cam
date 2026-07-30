@@ -1,8 +1,10 @@
 import csv
 import io
 import json
+import shutil
 import uuid
 import zipfile
+from datetime import datetime, timezone
 from pathlib import Path
 from typing import Annotated
 
@@ -14,8 +16,10 @@ from sqlalchemy.orm import Session, joinedload
 from app.api.deps import get_current_user, get_db, require_roles
 from app.core import roles as R
 from app.core.config import get_settings
-from app.models import Case, CaseTestCase, TestCase, TestCaseAttachment, User
+from app.models import Case, CaseTestCase, PostProcessorVersion, RegressionRun, TestCase, TestCaseAttachment, User
 from app.schemas.test_case import (
+    RegressionRunOut,
+    ShopfloorRegressionCreate,
     TestCaseAttachmentOut,
     TestCaseCreate,
     TestCaseDetailOut,
@@ -29,11 +33,61 @@ from app.services.case_access import ensure_case_readable
 from app.services.text_files import is_text_content
 
 router = APIRouter(tags=["test-cases"])
+
+
 def _tc_upload_dir(test_case_id: int) -> Path:
     settings = get_settings()
     base = Path(settings.UPLOAD_DIR) / "test-cases" / str(test_case_id)
     base.mkdir(parents=True, exist_ok=True)
     return base
+
+
+def _is_engineering_user(user: User) -> bool:
+    return user.role.key in (R.ADMIN, R.ENGINEERING)
+
+
+def _ensure_shopfloor_test_case_access(user: User, tc: TestCase) -> None:
+    if _is_engineering_user(user):
+        return
+    if user.role.key == R.FEEDBACK_PRODUCTION and tc.is_active and tc.shopfloor_released:
+        return
+    raise HTTPException(status.HTTP_403_FORBIDDEN, detail="Programmierfall ist nicht fuer Shopfloor freigegeben")
+
+
+def _is_nc_program_attachment(att: TestCaseAttachment) -> bool:
+    ext = Path(att.file_name).suffix.lower()
+    return att.attachment_role == "program" or ext in {".nc", ".tap", ".gcode", ".mpf", ".spf", ".h"}
+
+
+def _export_nc_attachment(att: TestCaseAttachment) -> dict[str, str | int]:
+    if not _is_nc_program_attachment(att):
+        raise HTTPException(status.HTTP_400_BAD_REQUEST, detail="Nur NC-/Programmdateien koennen uebertragen werden")
+    src = Path(att.storage_path)
+    if not src.is_file():
+        raise HTTPException(status.HTTP_404_NOT_FOUND, detail="File missing on disk")
+    settings = get_settings()
+    target_dir = Path(settings.MACHINE_NC_EXPORT_DIR)
+    if not target_dir.exists() or not target_dir.is_dir():
+        raise HTTPException(
+            status.HTTP_503_SERVICE_UNAVAILABLE,
+            detail=f"Maschinen-Verzeichnis nicht verfuegbar: {settings.MACHINE_NC_EXPORT_DIR}",
+        )
+    safe_name = Path(att.file_name).name
+    if not safe_name:
+        raise HTTPException(status.HTTP_400_BAD_REQUEST, detail="Ungueltiger Dateiname")
+    dest = target_dir / safe_name
+    tmp = target_dir / f".{safe_name}.{uuid.uuid4().hex}.tmp"
+    try:
+        shutil.copyfile(src, tmp)
+        tmp.replace(dest)
+    except OSError as ex:
+        try:
+            if tmp.exists():
+                tmp.unlink()
+        except OSError:
+            pass
+        raise HTTPException(status.HTTP_503_SERVICE_UNAVAILABLE, detail=f"Uebertragung fehlgeschlagen: {ex}") from ex
+    return {"attachment_id": att.id, "file_name": safe_name, "target_path": str(dest), "bytes": dest.stat().st_size}
 
 
 def _parse_import_rows(filename: str, content: bytes) -> list[TestCaseImportRow]:
@@ -173,6 +227,99 @@ async def import_test_cases(
         attached_programs=attached_programs,
         errors=errors,
     )
+
+
+@router.get("/test-cases/shopfloor", response_model=list[TestCaseOut])
+def list_shopfloor_test_cases(
+    db: Annotated[Session, Depends(get_db)],
+    user: Annotated[User, Depends(require_roles(R.ADMIN, R.ENGINEERING, R.FEEDBACK_PRODUCTION))],
+) -> list[TestCase]:
+    rows = (
+        db.execute(
+            select(TestCase)
+            .options(joinedload(TestCase.machine), joinedload(TestCase.control_system))
+            .where(TestCase.is_active.is_(True), TestCase.shopfloor_released.is_(True))
+            .order_by(TestCase.id.desc())
+        )
+        .scalars()
+        .all()
+    )
+    if _is_engineering_user(user):
+        return list(rows)
+    return list(rows)
+
+
+@router.get("/test-cases/shopfloor/{tc_id}/detail", response_model=TestCaseDetailOut)
+def get_shopfloor_test_case_detail(
+    tc_id: int,
+    db: Annotated[Session, Depends(get_db)],
+    user: Annotated[User, Depends(require_roles(R.ADMIN, R.ENGINEERING, R.FEEDBACK_PRODUCTION))],
+) -> TestCaseDetailOut:
+    tc = (
+        db.execute(
+            select(TestCase)
+            .options(
+                joinedload(TestCase.machine),
+                joinedload(TestCase.control_system),
+                joinedload(TestCase.attachments),
+                joinedload(TestCase.case_links),
+                joinedload(TestCase.regression_runs),
+            )
+            .where(TestCase.id == tc_id)
+        )
+        .unique()
+        .scalar_one_or_none()
+    )
+    if tc is None:
+        raise HTTPException(status.HTTP_404_NOT_FOUND, detail="Not found")
+    _ensure_shopfloor_test_case_access(user, tc)
+    return TestCaseDetailOut(
+        **TestCaseOut.model_validate(tc).model_dump(),
+        linked_case_ids=[x.case_id for x in tc.case_links] if _is_engineering_user(user) else [],
+        regression_count=len(tc.regression_runs),
+        attachments=[
+            TestCaseAttachmentOut.model_validate(a).model_copy(
+                update={"download_url": f"/api/v1/test-case-attachments/{a.id}/download"}
+            )
+            for a in tc.attachments
+        ],
+    )
+
+
+@router.post("/test-cases/shopfloor/{tc_id}/result", response_model=RegressionRunOut, status_code=status.HTTP_201_CREATED)
+def report_shopfloor_result(
+    tc_id: int,
+    body: ShopfloorRegressionCreate,
+    db: Annotated[Session, Depends(get_db)],
+    user: Annotated[User, Depends(require_roles(R.ADMIN, R.ENGINEERING, R.FEEDBACK_PRODUCTION))],
+) -> RegressionRun:
+    tc = db.get(TestCase, tc_id)
+    if tc is None:
+        raise HTTPException(status.HTTP_404_NOT_FOUND, detail="Not found")
+    _ensure_shopfloor_test_case_access(user, tc)
+    if db.get(PostProcessorVersion, body.post_processor_version_id) is None:
+        raise HTTPException(status.HTTP_400_BAD_REQUEST, detail="Invalid post_processor_version_id")
+    rr = RegressionRun(
+        test_case_id=tc.id,
+        post_processor_version_id=body.post_processor_version_id,
+        result=body.result,
+        notes=body.notes,
+        executed_by=user.id,
+        executed_at=datetime.now(timezone.utc),
+    )
+    db.add(rr)
+    db.flush()
+    log_action(
+        db,
+        entity_type="RegressionRun",
+        entity_id=rr.id,
+        action="shopfloor_reported",
+        performed_by=user.id,
+        new_value={"result": rr.result, "test_case_id": rr.test_case_id},
+    )
+    db.commit()
+    db.refresh(rr)
+    return rr
 
 
 @router.get("/test-cases/{tc_id}/attachments", response_model=list[TestCaseAttachmentOut])
@@ -376,15 +523,45 @@ def patch_tc(
 def download_test_case_attachment(
     attachment_id: int,
     db: Annotated[Session, Depends(get_db)],
-    user: Annotated[User, Depends(require_roles(R.ADMIN, R.ENGINEERING))],
+    user: Annotated[User, Depends(require_roles(R.ADMIN, R.ENGINEERING, R.FEEDBACK_PRODUCTION))],
 ) -> FileResponse:
     att = db.get(TestCaseAttachment, attachment_id)
     if att is None:
         raise HTTPException(status.HTTP_404_NOT_FOUND, detail="Not found")
+    tc = db.get(TestCase, att.test_case_id)
+    if tc is None:
+        raise HTTPException(status.HTTP_404_NOT_FOUND, detail="Not found")
+    _ensure_shopfloor_test_case_access(user, tc)
     path = Path(att.storage_path)
     if not path.is_file():
         raise HTTPException(status.HTTP_404_NOT_FOUND, detail="File missing on disk")
     return FileResponse(path, filename=att.file_name)
+
+
+@router.post("/test-case-attachments/{attachment_id}/publish-nc")
+def publish_test_case_attachment_to_machine(
+    attachment_id: int,
+    db: Annotated[Session, Depends(get_db)],
+    user: Annotated[User, Depends(require_roles(R.ADMIN, R.ENGINEERING, R.FEEDBACK_PRODUCTION))],
+) -> dict[str, str | int]:
+    att = db.get(TestCaseAttachment, attachment_id)
+    if att is None:
+        raise HTTPException(status.HTTP_404_NOT_FOUND, detail="Not found")
+    tc = db.get(TestCase, att.test_case_id)
+    if tc is None:
+        raise HTTPException(status.HTTP_404_NOT_FOUND, detail="Not found")
+    _ensure_shopfloor_test_case_access(user, tc)
+    exported = _export_nc_attachment(att)
+    log_action(
+        db,
+        entity_type="TestCaseAttachment",
+        entity_id=att.id,
+        action="published_to_machine",
+        performed_by=user.id,
+        new_value={"test_case_id": tc.id, "file_name": att.file_name, "target_path": exported["target_path"]},
+    )
+    db.commit()
+    return exported
 
 
 @router.delete("/test-case-attachments/{attachment_id}", status_code=status.HTTP_204_NO_CONTENT)
@@ -425,11 +602,15 @@ def _is_text_test_case_attachment(att: TestCaseAttachment) -> bool:
 def read_test_case_attachment_text(
     attachment_id: int,
     db: Annotated[Session, Depends(get_db)],
-    user: Annotated[User, Depends(require_roles(R.ADMIN, R.ENGINEERING))],
+    user: Annotated[User, Depends(require_roles(R.ADMIN, R.ENGINEERING, R.FEEDBACK_PRODUCTION))],
 ) -> dict[str, str | int]:
     att = db.get(TestCaseAttachment, attachment_id)
     if att is None:
         raise HTTPException(status.HTTP_404_NOT_FOUND, detail="Not found")
+    tc = db.get(TestCase, att.test_case_id)
+    if tc is None:
+        raise HTTPException(status.HTTP_404_NOT_FOUND, detail="Not found")
+    _ensure_shopfloor_test_case_access(user, tc)
     if not _is_text_test_case_attachment(att):
         raise HTTPException(status.HTTP_415_UNSUPPORTED_MEDIA_TYPE, detail="Attachment is not a text file")
     path = Path(att.storage_path)

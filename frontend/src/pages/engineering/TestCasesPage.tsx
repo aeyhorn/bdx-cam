@@ -21,6 +21,7 @@ type TestCaseDetail = {
   expected_result?: string | null
   risk_level?: string | null
   is_active: boolean
+  shopfloor_released: boolean
   linked_case_ids: number[]
   regression_count: number
   attachments: Array<{
@@ -135,6 +136,7 @@ export function TestCasesPage() {
       },
       { field: 'scenario_type', headerName: 'Szenario', width: 120 },
       { field: 'is_active', headerName: 'Aktiv', width: 80, type: 'boolean' },
+      { field: 'shopfloor_released', headerName: 'Shopfloor', width: 110, type: 'boolean' },
     ],
     []
   )
@@ -149,6 +151,7 @@ export function TestCasesPage() {
       { kind: 'text', name: 'expected_result', label: 'Erwartetes Ergebnis', multiline: true, rows: 2 },
       { kind: 'text', name: 'risk_level', label: 'Risiko' },
       { kind: 'checkbox', name: 'is_active', label: 'Aktiv' },
+      { kind: 'checkbox', name: 'shopfloor_released', label: 'Fuer Shopfloor freigeben' },
     ],
     [mOpts, csOpts]
   )

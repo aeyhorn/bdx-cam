@@ -21,6 +21,7 @@ class TestCaseOut(ORMModel):
     expected_result: str | None
     risk_level: str | None
     is_active: bool
+    shopfloor_released: bool
     created_at: datetime
     updated_at: datetime
     machine: _RefOut | None = None
@@ -74,6 +75,7 @@ class TestCaseCreate(BaseModel):
     expected_result: str | None = None
     risk_level: str | None = None
     is_active: bool = True
+    shopfloor_released: bool = False
 
 
 class TestCaseUpdate(BaseModel):
@@ -85,6 +87,7 @@ class TestCaseUpdate(BaseModel):
     expected_result: str | None = None
     risk_level: str | None = None
     is_active: bool | None = None
+    shopfloor_released: bool | None = None
 
 
 class RegressionRunOut(ORMModel):
@@ -103,6 +106,12 @@ class RegressionRunCreate(BaseModel):
     result: str = Field(pattern="^(passed|failed|partial|open)$")
     notes: str | None = None
     executed_at: datetime | None = None
+
+
+class ShopfloorRegressionCreate(BaseModel):
+    post_processor_version_id: int
+    result: Literal["passed", "failed", "partial"]
+    notes: str | None = None
 
 
 class RegressionRunUpdate(BaseModel):

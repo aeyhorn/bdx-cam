@@ -16,6 +16,7 @@ docker compose up --build
 - **Frontend:** http://localhost:8080 (Nginx, `/api` → Backend)
 - **Backend API:** http://localhost:8000 — OpenAPI: http://localhost:8000/docs
 - **PostgreSQL:** Port 5432 (User/Pass/DB: `postgres` / `postgres` / `cam_feedback`)
+- **NC-/G-Code-Ablage:** Host `/mnt/smoothcam` ist im Backend-Container als `/mnt/smoothcam` eingebunden.
 
 **Zugriff über andere Rechner / LAN-IP:** Die Oberfläche unter `http://<deine-ip>:8080` öffnen (nicht nur „localhost“). API-Aufrufe laufen dann über denselben Host (Nginx-Proxy `/api`). Wenn du beim Frontend-Build `VITE_API_URL=http://localhost:8000` gesetzt hast, würde der Browser von anderen PCs fälschlich `localhost` auf dem **eigenen** Rechner ansprechen — Anmeldung schlägt fehl (häufig **404 Not Found**). Entweder `VITE_API_URL` weglassen/leer lassen oder die echte URL zum Backend setzen und `CORS_ORIGINS` in Compose um `http://<deine-ip>:8080` ergänzen.
 

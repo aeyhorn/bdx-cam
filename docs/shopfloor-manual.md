@@ -32,7 +32,23 @@ Hinweis: Titel kann leer bleiben; das System verwendet dann den Programmnamen.
 3. Status pruefen (z. B. Neu, In Bearbeitung, Geloest).
 4. Bei Rueckfragen Kommentare oder Zusatzinfos nachreichen (falls freigeschaltet).
 
-## 4. Dateien am Standardfall nutzen
+## 4. Freigegebene Programmierfaelle pruefen
+
+Wenn Engineering/Admin einen vorhandenen Programmierfall fuer den Shopfloor freigibt:
+
+1. Im Menue `Pruefauftraege` oeffnen.
+2. Freigegebenen Programmierfall auswaehlen und `Pruefen` oeffnen.
+3. Beschreibung, erwartetes Ergebnis und angehaengte NC-/STEP-/Projektdateien pruefen.
+4. Bei NC-/Programmdateien `An Maschine` waehlen, um den NC-Code in das gemountete Maschinen-Verzeichnis zu uebertragen.
+5. Alternativ Datei anzeigen oder herunterladen.
+6. Programm an der Maschine testen.
+7. `Post-Version auf Maschine` auswaehlen.
+8. Ergebnis setzen: `Bestanden`, `Fehlgeschlagen` oder `Teilweise`.
+9. Beobachtung / Rueckmeldung eintragen und Ergebnis speichern.
+
+Die Rueckmeldung wird als Regression am Programmierfall gespeichert und ist danach fuer Engineering/Admin sichtbar.
+
+## 5. Dateien am Standardfall nutzen
 
 In der Standardfall-Detailansicht koennen je nach Berechtigung Anhaenge genutzt werden:
 
@@ -43,24 +59,27 @@ In der Standardfall-Detailansicht koennen je nach Berechtigung Anhaenge genutzt 
 
 Wenn ein Download mit Auth-Fehler scheitert, Seite neu laden und erneut anmelden.
 
-## 5. Programmierfaelle (nur Engineering/Admin)
+## 6. Programmierfaelle verwalten (nur Engineering/Admin)
 
 Falls du als Tester zusaetzliche Rechte hast:
 
 1. `Programmierfaelle` oeffnen.
 2. Eintrag doppelklicken -> `Programmierfall-Container`.
 3. NC/STEP-Dateien hochladen, anzeigen, herunterladen oder loeschen.
+4. Checkbox `Fuer Shopfloor freigeben` setzen, damit der Programmierfall unter `Pruefauftraege` erscheint.
 
-## 6. Gute Praxis fuer Shopfloor-Meldungen
+## 7. Gute Praxis fuer Shopfloor-Meldungen
 
 - Pro Problem einen eigenen Standardfall anlegen.
 - NC-Programmname exakt wie an der Maschine verwenden.
 - Kurz und konkret schreiben: *Was wurde erwartet? Was ist passiert?*
 - Wenn moeglich Satznummer, Screenshot oder NC-Ausschnitt ergaenzen.
 
-## 7. Schnelle Fehlerhilfe
+## 8. Schnelle Fehlerhilfe
 
 - **Keine Daten sichtbar** -> Browser mit `Ctrl+F5` neu laden.
 - **Nicht angemeldet / Not authenticated** -> neu einloggen.
 - **Speichern nicht sichtbar** -> Standardfall erneut oeffnen und Status/Kommentar pruefen.
+- **Programmierfall fehlt in Pruefauftraege** -> Engineering/Admin muss den Programmierfall aktiv setzen und fuer Shopfloor freigeben.
+- **Uebertragung an Maschine scheitert** -> pruefen, ob das Maschinen-Verzeichnis im Backend-Container gemountet und beschreibbar ist.
 

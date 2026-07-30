@@ -18,6 +18,7 @@ class Settings(BaseSettings):
     REFRESH_TOKEN_EXPIRE_DAYS: int = 7
 
     UPLOAD_DIR: str = "./uploads"
+    MACHINE_NC_EXPORT_DIR: str = "/mnt/smoothcam"
     MAX_UPLOAD_MB: int = 100
     STEP_VIEWER_CACHE_DIR: str = "./uploads/_step_cache"
     STEP_CONVERTER_COMMAND: str = ""

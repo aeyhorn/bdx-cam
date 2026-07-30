@@ -28,6 +28,7 @@ services:
       INITIAL_ADMIN_EMAIL: ${INITIAL_ADMIN_EMAIL:-admin@example.com}
       INITIAL_ADMIN_PASSWORD: ${INITIAL_ADMIN_PASSWORD:-ChangeMe123!}
       UPLOAD_DIR: /data/uploads
+      MACHINE_NC_EXPORT_DIR: ${MACHINE_NC_EXPORT_DIR:-/mnt/smoothcam}
       STEP_VIEWER_CACHE_DIR: ${STEP_VIEWER_CACHE_DIR:-/data/uploads/_step_cache}
       STEP_CONVERTER_COMMAND: ${STEP_CONVERTER_COMMAND:-}
       SYSTEM_BUILD_AUTOINCREMENT_ON_STARTUP: ${SYSTEM_BUILD_AUTOINCREMENT_ON_STARTUP:-true}
@@ -37,6 +38,7 @@ services:
       - "8000:8000"
     volumes:
       - cam_uploads:/data/uploads
+      - /mnt/smoothcam:/mnt/smoothcam
     healthcheck:
       test:
         [
